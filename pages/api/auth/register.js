@@ -1,78 +1,61 @@
-import { sql } from '@vercel/postgres'
+import { neon } from '@neondatabase/serverless'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { email, name, databaseUrl } = req.body
-
-  if (!email || !databaseUrl) {
-    return res.status(400).json({ error: 'Email and database URL required' })
-  }
+  if (!email || !databaseUrl) return res.status(400).json({ error: 'Email and database URL required' })
 
   try {
-    // Create master users table in KRYVLayer's own DB
-    await sql`
-      CREATE TABLE IF NOT EXISTS kryv_users (
-        id SERIAL PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        name TEXT,
-        database_url TEXT NOT NULL,
+    // Master KRYVLayer DB — stores user accounts
+    const masterSql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL)
+
+    await masterSql`CREATE TABLE IF NOT EXISTS kryv_users (
+      id SERIAL PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      name TEXT,
+      database_url TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+    )`
+
+    // Test + setup user's own database
+    try {
+      const userSql = neon(databaseUrl)
+
+      await userSql`CREATE TABLE IF NOT EXISTS domains (
+        id SERIAL PRIMARY KEY, user_id TEXT, domain TEXT,
+        website_url TEXT, business_name TEXT, industry TEXT, description TEXT,
         created_at TIMESTAMP DEFAULT NOW()
-      )
-    `
+      )`
 
-    // Test user's database connection
-    const { Client } = await import('pg').catch(() => null) || {}
-    if (Client && databaseUrl) {
-      const client = new Client({ connectionString: databaseUrl, ssl: { rejectUnauthorized: false } })
-      await client.connect()
-
-      // Create tables in user's own database
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS domains (
-          id SERIAL PRIMARY KEY,
-          user_id TEXT,
-          domain TEXT,
-          website_url TEXT,
-          business_name TEXT,
-          industry TEXT,
-          description TEXT,
-          created_at TIMESTAMP DEFAULT NOW()
-        )
-      `)
-
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS pages (
-          id SERIAL PRIMARY KEY,
-          domain_id INTEGER,
-          slug TEXT NOT NULL,
-          title TEXT,
-          meta_description TEXT,
-          content TEXT,
-          content_type TEXT DEFAULT 'html',
-          views INTEGER DEFAULT 0,
-          created_at TIMESTAMP DEFAULT NOW(),
-          UNIQUE(domain_id, slug)
-        )
-      `)
-
-      await client.end()
+      await userSql`CREATE TABLE IF NOT EXISTS pages (
+        id SERIAL PRIMARY KEY, domain_id INTEGER, slug TEXT NOT NULL,
+        title TEXT, meta_description TEXT, content TEXT,
+        content_type TEXT DEFAULT 'html', views INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(), UNIQUE(domain_id, slug)
+      )`
+    } catch (dbErr) {
+      return res.status(400).json({
+        success: false,
+        error: 'Could not connect to your database. Check the URL and try again.',
+        details: dbErr.message
+      })
     }
 
-    // Save user to KRYVLayer master DB
-    const userResult = await sql`
+    // Save user
+    const result = await masterSql`
       INSERT INTO kryv_users (email, name, database_url)
       VALUES (${email}, ${name || ''}, ${databaseUrl})
-      ON CONFLICT (email) DO UPDATE SET database_url = EXCLUDED.database_url
+      ON CONFLICT (email) DO UPDATE SET
+        database_url = EXCLUDED.database_url,
+        name = EXCLUDED.name
       RETURNING id, email, name
     `
 
-    const user = userResult.rows[0]
-
     return res.status(200).json({
       success: true,
-      user: { id: user.id, email: user.email, name: user.name },
-      message: 'Account created! Your database is connected.'
+      user: result[0],
+      message: 'Account created and database connected!'
     })
 
   } catch (error) {
