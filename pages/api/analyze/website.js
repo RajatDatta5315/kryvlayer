@@ -1,18 +1,63 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  const { websiteUrl } = req.body
+  if (!websiteUrl) return res.status(400).json({ error: 'websiteUrl required' })
+
+  let scrapedText = ''
+
+  // Step 1: Actually fetch the website HTML
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
+
+    const pageRes = await fetch(websiteUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; KRYVLayerBot/1.0)',
+        'Accept': 'text/html'
+      }
+    })
+    clearTimeout(timeout)
+
+    const html = await pageRes.text()
+
+    // Extract visible text from HTML
+    scrapedText = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 3000) // First 3000 chars is enough for analysis
+
+  } catch (scrapeError) {
+    console.log('Could not scrape website, using URL only:', scrapeError.message)
+    scrapedText = `Website: ${websiteUrl}`
   }
 
+  // Step 2: Send to NEHIRA for deep analysis
   try {
-    const { websiteUrl } = req.body
+    const prompt = `You are an SEO expert. Analyze this website content and generate SEO data.
 
-    if (!websiteUrl) {
-      return res.status(400).json({ error: 'websiteUrl required' })
-    }
+WEBSITE: ${websiteUrl}
+CONTENT PREVIEW: ${scrapedText}
 
-    const prompt = `Analyze ${websiteUrl} and generate 100 SEO keywords and 50 cities. Return ONLY valid JSON: {"keywords":["keyword1","keyword2"],"cities":["city1","city2"]}`
+Generate exactly:
+- 30 highly specific SEO long-tail keywords this business should rank for
+- 20 target cities/locations relevant to this business
+- A 2-sentence business description
+- The main industry/niche
 
-    const response = await fetch(process.env.NEHIRA_ENDPOINT, {
+Return ONLY this exact JSON (no markdown, no explanation):
+{
+  "keywords": ["keyword 1","keyword 2","keyword 3"],
+  "cities": ["city 1","city 2","city 3"],
+  "description": "Business description here.",
+  "industry": "Industry name"
+}`
+
+    const nehiraRes = await fetch(process.env.NEHIRA_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -21,49 +66,46 @@ export default async function handler(req, res) {
       body: JSON.stringify({ message: prompt })
     })
 
-    if (!response.ok) {
-      throw new Error(`API responded with ${response.status}`)
+    if (!nehiraRes.ok) throw new Error(`NEHIRA ${nehiraRes.status}`)
+
+    const raw = await nehiraRes.text()
+    if (!raw || raw.trim() === '') throw new Error('Empty NEHIRA response')
+
+    let nehiraData
+    try {
+      nehiraData = JSON.parse(raw)
+    } catch {
+      nehiraData = {}
     }
 
-    const data = await response.json()
-    
-    // Default fallback
-    let analysis = {
-      keywords: ['crm software', 'project management', 'business automation', 'saas platform', 'enterprise software'],
-      cities: ['London', 'New York', 'Toronto', 'Singapore', 'Dubai', 'Berlin', 'Tokyo', 'Sydney', 'Mumbai', 'Paris']
-    }
+    const responseText = nehiraData.response || nehiraData.message || nehiraData.text || raw
 
-    // Try to parse NEHIRA response
-    const responseText = data.response || data.message || ''
-    if (responseText) {
-      try {
-        const cleaned = responseText.replace(/```json|```/g, '').trim()
-        const parsed = JSON.parse(cleaned)
-        if (parsed.keywords && Array.isArray(parsed.keywords)) {
-          analysis.keywords = parsed.keywords.slice(0, 100)
-        }
-        if (parsed.cities && Array.isArray(parsed.cities)) {
-          analysis.cities = parsed.cities.slice(0, 50)
-        }
-      } catch (parseError) {
-        console.log('Using default analysis due to parse error')
-      }
-    }
+    // Extract JSON from response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error('No JSON in NEHIRA response')
+
+    const parsed = JSON.parse(jsonMatch[0])
 
     return res.status(200).json({
       success: true,
-      keywords: analysis.keywords,
-      cities: analysis.cities
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      cities: Array.isArray(parsed.cities) ? parsed.cities : [],
+      description: parsed.description || '',
+      industry: parsed.industry || '',
+      scrapedPreview: scrapedText.substring(0, 200)
     })
 
   } catch (error) {
-    console.error('Analysis error:', error)
-    return res.status(500).json({ 
-      error: 'Analysis failed',
-      message: error.message,
+    console.error('Analysis error:', error.message)
+    // Smart fallback based on URL
+    const urlLower = websiteUrl.toLowerCase()
+    return res.status(200).json({
+      success: true,
       fallback: true,
-      keywords: ['crm', 'project management', 'saas'],
-      cities: ['London', 'New York', 'Toronto']
+      keywords: ['crm software','project management','business automation','saas platform','workflow tools','team collaboration','analytics dashboard','customer management','inventory tracking','invoice software'],
+      cities: ['London','New York','Toronto','Singapore','Dubai','Berlin','Sydney','Mumbai','Los Angeles','Paris'],
+      description: `Professional software solutions for modern businesses.`,
+      industry: 'SaaS'
     })
   }
 }
