@@ -1,0 +1,53 @@
+# KRYVLayer
+
+> KRYVLayer is an AI-powered programmatic SEO engine that generates thousands of unique landing pages automatically on any domain. Powered by NEHIRA AI.
+
+## What KRYVLayer Does
+
+KRYVLayer reads a business website URL, extracts relevant keywords and target cities using NEHIRA AI, then generates hundreds of unique, SEO-optimized HTML landing pages — all live on the user's own domain.
+
+## Key Features
+
+- Programmatic SEO page generation (100–1000 pages per domain)
+- AI content generation powered by NEHIRA (vokryl.kryv.network)
+- Multi-domain support per user account
+- Real DNS verification via Cloudflare DNS-over-HTTPS
+- Built-in analytics (views, top pages, domain stats)
+- Weekly automated page regeneration via cron scheduler
+- CSV export of all generated pages
+- NEHIRA AI chat for SEO strategy advice
+- Auto-generated XML sitemap and robots.txt
+
+## API Endpoints
+
+- POST /api/generate/auto — Generate pages for a domain
+- POST /api/pages/bulk-generate — Bulk generate up to 1000 pages
+- POST /api/analyze/website — Analyze website for keywords/cities
+- POST /api/domains/create — Add new domain
+- GET /api/domains/list — List user domains
+- POST /api/domains/verify-dns — Check DNS connection
+- GET /api/analytics/stats — Get platform statistics
+- POST /api/nehira/ask — Chat with NEHIRA AI
+- GET /api/export/csv — Export pages as CSV
+
+## Technology Stack
+
+- Next.js 15 (Pages Router)
+- Neon Serverless Postgres
+- NEHIRA AI (https://vokryl.kryv.network/api/nehira/chat)
+- Deployed on Vercel
+
+## Content Model
+
+Each generated page includes:
+- Full HTML with premium dark UI design
+- Unique AI-written body content (300+ words)
+- SEO title and meta description
+- FAQ section
+- Statistics section
+- Call-to-action with link to original business website
+- View tracking
+
+## Target Users
+
+SaaS founders, digital marketers, SEO agencies, and businesses that want to generate location-based or use-case-based landing pages at scale without writing content manually.
