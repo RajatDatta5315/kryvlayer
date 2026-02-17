@@ -6,17 +6,11 @@ export default async function handler(req, res) {
   try {
     const { websiteUrl } = req.body
 
-    // Step 1: Ask NEHIRA to analyze the website
-    const prompt = `
-Analyze this website: ${websiteUrl}
+    if (!websiteUrl) {
+      return res.status(400).json({ error: 'websiteUrl required' })
+    }
 
-Extract and generate:
-1. 100 relevant SEO keywords for this business
-2. 50 target cities/locations globally
-3. Return as JSON: {"keywords": ["keyword1", "keyword2"], "cities": ["city1", "city2"]}
-
-Be specific and relevant to the business niche.
-`
+    const prompt = `Analyze ${websiteUrl} and generate 100 SEO keywords and 50 cities. Return ONLY valid JSON: {"keywords":["keyword1","keyword2"],"cities":["city1","city2"]}`
 
     const response = await fetch(process.env.NEHIRA_ENDPOINT, {
       method: 'POST',
@@ -27,28 +21,49 @@ Be specific and relevant to the business niche.
       body: JSON.stringify({ message: prompt })
     })
 
+    if (!response.ok) {
+      throw new Error(`API responded with ${response.status}`)
+    }
+
     const data = await response.json()
     
-    // Parse NEHIRA response (it might return JSON string)
-    let analysis
-    try {
-      analysis = JSON.parse(data.response || data.message)
-    } catch {
-      // If not JSON, use defaults
-      analysis = {
-        keywords: ['crm software', 'project management', 'inventory system'],
-        cities: ['London', 'New York', 'Toronto', 'Singapore', 'Dubai']
+    // Default fallback
+    let analysis = {
+      keywords: ['crm software', 'project management', 'business automation', 'saas platform', 'enterprise software'],
+      cities: ['London', 'New York', 'Toronto', 'Singapore', 'Dubai', 'Berlin', 'Tokyo', 'Sydney', 'Mumbai', 'Paris']
+    }
+
+    // Try to parse NEHIRA response
+    const responseText = data.response || data.message || ''
+    if (responseText) {
+      try {
+        const cleaned = responseText.replace(/```json|```/g, '').trim()
+        const parsed = JSON.parse(cleaned)
+        if (parsed.keywords && Array.isArray(parsed.keywords)) {
+          analysis.keywords = parsed.keywords.slice(0, 100)
+        }
+        if (parsed.cities && Array.isArray(parsed.cities)) {
+          analysis.cities = parsed.cities.slice(0, 50)
+        }
+      } catch (parseError) {
+        console.log('Using default analysis due to parse error')
       }
     }
 
     return res.status(200).json({
       success: true,
-      keywords: analysis.keywords || [],
-      cities: analysis.cities || []
+      keywords: analysis.keywords,
+      cities: analysis.cities
     })
 
   } catch (error) {
     console.error('Analysis error:', error)
-    return res.status(500).json({ error: error.message })
+    return res.status(500).json({ 
+      error: 'Analysis failed',
+      message: error.message,
+      fallback: true,
+      keywords: ['crm', 'project management', 'saas'],
+      cities: ['London', 'New York', 'Toronto']
+    })
   }
 }
