@@ -1,22 +1,35 @@
 import { neon } from '@neondatabase/serverless'
 
-async function callNEHIRA(prompt) {
-  try {
-    const res = await fetch(process.env.NEHIRA_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEHIRA_API_KEY}`
-      },
-      body: JSON.stringify({ message: prompt })
-    })
-    if (!res.ok) return null
-    const raw = await res.text()
-    if (!raw || !raw.trim()) return null
-    let data
-    try { data = JSON.parse(raw) } catch { return raw }
-    return data.response || data.message || data.text || data.content || null
-  } catch { return null }
+async function callNEHIRA(prompt, retries = 2) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(process.env.NEHIRA_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEHIRA_API_KEY}`
+        },
+        body: JSON.stringify({ message: prompt }),
+        signal: AbortSignal.timeout(15000)
+      })
+
+      if (!res.ok) {
+        console.error(`NEHIRA attempt ${i + 1} failed: ${res.status}`)
+        continue
+      }
+
+      const raw = await res.text()
+      if (!raw || !raw.trim()) continue
+
+      let data
+      try { data = JSON.parse(raw) } catch { return raw }
+      return data.response || data.message || data.text || null
+    } catch (error) {
+      console.error(`NEHIRA attempt ${i + 1} error:`, error.message)
+      if (i === retries - 1) return null
+    }
+  }
+  return null
 }
 
 function buildSlug(keyword, city) {
@@ -94,7 +107,7 @@ footer{border-top:1px solid rgba(255,255,255,0.06);padding:1.5rem;text-align:cen
       <div class="card"><div class="card-icon">⚡</div><div class="card-title">Instant Setup</div><div class="card-body">Live in minutes. No technical skills needed for ${city} businesses.</div></div>
       <div class="card"><div class="card-icon">🔒</div><div class="card-title">Enterprise Security</div><div class="card-body">Bank-grade encryption trusted by ${city}'s top businesses.</div></div>
       <div class="card"><div class="card-icon">📈</div><div class="card-title">Scales With You</div><div class="card-body">From startup to enterprise — ${businessName} grows with ${city} businesses.</div></div>
-      <div class="card"><div class="card-icon">🤖</div><div class="card-title">AI-Powered</div><div class="card-body">Automate your ${keyword} workflows with cutting-edge AI.</div></div>
+      <div class="card"><div class="card-icon">⚙</div><div class="card-title">AI-Powered</div><div class="card-body">Automate your ${keyword} workflows with cutting-edge AI.</div></div>
     </div>
     <div class="cta-box">
       <div class="cta-title">Start your free trial today</div>
@@ -118,18 +131,8 @@ export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL)
 
-    await sql`CREATE TABLE IF NOT EXISTS domains (
-      id SERIAL PRIMARY KEY, user_id TEXT, domain TEXT,
-      website_url TEXT, business_name TEXT, industry TEXT, description TEXT,
-      created_at TIMESTAMP DEFAULT NOW()
-    )`
-
-    await sql`CREATE TABLE IF NOT EXISTS pages (
-      id SERIAL PRIMARY KEY, domain_id INTEGER, slug TEXT NOT NULL,
-      title TEXT, meta_description TEXT, content TEXT,
-      content_type TEXT DEFAULT 'html', views INTEGER DEFAULT 0,
-      created_at TIMESTAMP DEFAULT NOW(), UNIQUE(domain_id, slug)
-    )`
+    await sql`CREATE TABLE IF NOT EXISTS domains (id SERIAL PRIMARY KEY, user_id TEXT, domain TEXT, website_url TEXT, business_name TEXT, industry TEXT, description TEXT, created_at TIMESTAMP DEFAULT NOW())`
+    await sql`CREATE TABLE IF NOT EXISTS pages (id SERIAL PRIMARY KEY, domain_id INTEGER, slug TEXT NOT NULL, title TEXT, meta_description TEXT, content TEXT, content_type TEXT DEFAULT 'html', views INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT NOW(), UNIQUE(domain_id, slug))`
 
     const domResult = await sql`SELECT * FROM domains WHERE id = ${domainId} LIMIT 1`
     if (!domResult.length) return res.status(404).json({ error: 'Domain not found' })
@@ -140,20 +143,10 @@ export default async function handler(req, res) {
     const industry = domain.industry || 'Software'
     const description = domain.description || ''
 
-    // Analyze website with NEHIRA
-    let keywords = []
-    let cities = []
+    let keywords = ['crm software','project management','business automation','saas platform','workflow tools','analytics dashboard','customer management','invoice software','team collaboration','marketing automation']
+    let cities = ['London','New York','Toronto','Singapore','Dubai','Berlin','Sydney','Mumbai','Paris','Tokyo']
 
-    const analysisPrompt = `You are an SEO expert. Analyze this business website: ${websiteUrl}
-
-Generate for this SPECIFIC business:
-- 20 highly targeted SEO long-tail keywords they should rank for
-- 20 target cities relevant to their business
-- Their main industry in 2 words
-
-Return ONLY this JSON, no other text:
-{"keywords":["kw1","kw2"],"cities":["city1","city2"],"industry":"Industry Name"}`
-
+    const analysisPrompt = `Analyze ${websiteUrl}. Generate 10 SEO keywords and 10 cities. Return ONLY JSON: {"keywords":["k1","k2"],"cities":["c1","c2"],"industry":"Industry Name"}`
     const analysisText = await callNEHIRA(analysisPrompt)
     
     if (analysisText) {
@@ -161,17 +154,12 @@ Return ONLY this JSON, no other text:
         const jsonMatch = analysisText.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0])
-          if (Array.isArray(parsed.keywords) && parsed.keywords.length > 0) keywords = parsed.keywords
-          if (Array.isArray(parsed.cities) && parsed.cities.length > 0) cities = parsed.cities
-          if (parsed.industry) {
-            await sql`UPDATE domains SET industry = ${parsed.industry} WHERE id = ${domainId}`
-          }
+          if (Array.isArray(parsed.keywords) && parsed.keywords.length) keywords = parsed.keywords.slice(0, 10)
+          if (Array.isArray(parsed.cities) && parsed.cities.length) cities = parsed.cities.slice(0, 10)
+          if (parsed.industry) await sql`UPDATE domains SET industry = ${parsed.industry} WHERE id = ${domainId}`
         }
       } catch {}
     }
-
-    if (keywords.length === 0) keywords = ['crm software','project management','business automation','saas platform','workflow tools','analytics dashboard','customer management','invoice software','team collaboration','marketing automation']
-    if (cities.length === 0) cities = ['London','New York','Toronto','Singapore','Dubai','Berlin','Sydney','Mumbai','Paris','Tokyo']
 
     const generatedPages = []
     const MAX = 100
@@ -182,35 +170,20 @@ Return ONLY this JSON, no other text:
 
         const pageSlug = buildSlug(keyword, city)
         const title = `${keyword} in ${city} | ${businessName}`
-        const metaDesc = `Best ${keyword} in ${city}. ${businessName} provides top-rated ${industry} solutions for ${city} businesses. Free trial available.`
+        const metaDesc = `Best ${keyword} in ${city}. ${businessName} provides top-rated ${industry} solutions for ${city} businesses.`
 
-        const contentPrompt = `Write a 250-word landing page body for "${businessName}" — a ${industry} company.
-Topic: "${keyword}" services for businesses in ${city}.
-Make it unique to ${city}'s market. Include specific local context.
-Write 3 paragraphs: problem in ${city}, solution, why ${businessName}.
-Plain text only.`
+        let aiContent = `${businessName} provides world-class ${keyword} solutions for businesses in ${city}. Our platform is trusted by hundreds of ${city} companies.\n\nWith ${businessName}, ${city} businesses get enterprise-grade features. Our ${keyword} tools are designed for ${city}'s unique market.\n\nJoin ${city}'s fastest-growing companies using ${businessName} for ${keyword}.`
 
-        let aiContent = `In ${city}'s competitive business landscape, finding the right ${keyword} solution can make the difference between growth and stagnation. ${businessName} has been helping ${city} businesses overcome exactly this challenge.
-
-Our ${keyword} platform was built with ${city} businesses in mind. We understand the local market dynamics, compliance requirements, and the unique pressures that ${city} companies face every day. That's why hundreds of ${city} businesses have made ${businessName} their trusted ${industry} partner.
-
-What sets us apart isn't just our technology — it's our commitment to your success in ${city}. With 24/7 support, seamless integrations, and a platform that scales as your ${city} business grows, ${businessName} is the ${keyword} solution you've been looking for. Start your free trial today and see results within 7 days.`
-
-        const generated = await callNEHIRA(contentPrompt)
+        const contentPrompt = `Write 250 words for ${businessName} about ${keyword} for businesses in ${city}. Professional tone. Plain text.`
+        const generated = await callNEHIRA(contentPrompt, 1)
         if (generated && generated.length > 100) aiContent = generated
 
         const fullHtml = buildLandingPageHTML(keyword, city, businessName, websiteUrl, industry, aiContent, description)
 
         try {
-          await sql`
-            INSERT INTO pages (domain_id, slug, title, meta_description, content, content_type)
-            VALUES (${domainId}, ${pageSlug}, ${title}, ${metaDesc}, ${fullHtml}, 'html')
-            ON CONFLICT (domain_id, slug) DO UPDATE SET content = EXCLUDED.content, title = EXCLUDED.title
-          `
+          await sql`INSERT INTO pages (domain_id, slug, title, meta_description, content, content_type) VALUES (${domainId}, ${pageSlug}, ${title}, ${metaDesc}, ${fullHtml}, 'html') ON CONFLICT (domain_id, slug) DO UPDATE SET content = EXCLUDED.content`
           generatedPages.push({ slug: pageSlug, title })
-        } catch (e) {
-          console.error('Insert error:', e.message)
-        }
+        } catch (e) { console.error('Insert:', e.message) }
       }
       if (generatedPages.length >= MAX) break
     }
@@ -218,6 +191,7 @@ What sets us apart isn't just our technology — it's our commitment to your suc
     return res.status(200).json({ success: true, count: generatedPages.length, pages: generatedPages })
 
   } catch (error) {
+    console.error('Generation error:', error)
     return res.status(500).json({ success: false, error: error.message })
   }
 }
