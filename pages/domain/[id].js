@@ -1,112 +1,89 @@
-import { neon } from '@neondatabase/serverless'
-import { useState } from 'react'
+import { useRouter } from 'next/router'
+import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import Link from 'next/link'
+import { ArrowLeft, ExternalLink, Search, Plus, Download } from 'lucide-react'
 
-export default function DomainPage({ domain, initialPages }) {
-  const [pages] = useState(initialPages || [])
-  const [filter, setFilter] = useState('')
-  const [regen, setRegen] = useState(false)
+export default function DomainDetail() {
+  const router = useRouter()
+  const { id } = router.query
+  const [domain, setDomain] = useState(null)
+  const [pages, setPages] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const PER = 20
 
-  const filtered = pages.filter(p => !filter || p.slug?.includes(filter.toLowerCase()) || p.title?.toLowerCase().includes(filter.toLowerCase()))
+  useEffect(() => {
+    if (!id) return
+    Promise.all([
+      fetch(`/api/domains/detail?domainId=${id}`).then(r => r.json()),
+      fetch(`/api/pages/list?domainId=${id}`).then(r => r.json()),
+    ]).then(([d, p]) => {
+      setDomain(d.domain || d)
+      setPages(Array.isArray(p) ? p : p.pages || [])
+    }).finally(() => setLoading(false))
+  }, [id])
 
-  async function handleRegen() {
-    setRegen(true)
-    try {
-      await fetch('/api/generate/auto', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domainId: domain.id })
-      })
-      window.location.reload()
-    } catch (e) { alert('Error: ' + e.message) }
-    setRegen(false)
-  }
-
-  if (!domain) return <div style={{ minHeight: '100vh', background: '#0a0a14', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><p>Domain not found</p></div>
+  const filtered = pages.filter(p => !search || (p.keyword || p.title || '').toLowerCase().includes(search.toLowerCase()))
+  const paginated = filtered.slice((page-1)*PER, page*PER)
+  const totalPages = Math.ceil(filtered.length / PER)
 
   return (
     <>
-      <Head>
-        <title>{domain.business_name} — KRYVLayer</title>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
-      </Head>
-      <div style={{ minHeight: '100vh', background: '#0a0a14', color: '#e8e6f0', fontFamily: "'DM Sans',sans-serif" }}>
-        <nav style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 1.5rem' }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', height: 64, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <a href="/dashboard" style={{ color: '#a78bfa', textDecoration: 'none', fontSize: '0.875rem' }}>← Dashboard</a>
-            <span style={{ fontFamily: 'Syne', fontWeight: 800, color: '#fff' }}>KRYV<span style={{ background: 'linear-gradient(135deg,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Layer</span></span>
-            <a href={`https://${domain.domain}`} target="_blank" style={{ color: '#a78bfa', fontSize: '0.875rem', textDecoration: 'none' }}>Live Site ↗</a>
+      <Head><title>{domain?.business_name || 'Domain'} — KRYVLayer</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" /></Head>
+      <div style={{ minHeight: '100vh', background: '#f8f9fc', fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: '#6b7280', fontSize: 13 }}><ArrowLeft size={14} /> Dashboard</Link>
+          {domain && <h1 style={{ fontSize: 15, fontWeight: 800, color: '#0f1117' }}>{domain.business_name} · {pages.length} pages</h1>}
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <a href={`/api/export/csv?domainId=${id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#f8f9fc', border: '1px solid #e5e7eb', borderRadius: 9, color: '#374151', textDecoration: 'none', fontSize: 12, fontWeight: 600 }}><Download size={12} /> Export CSV</a>
+            <Link href={`/add-domain`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#4f46e5', borderRadius: 9, color: '#fff', textDecoration: 'none', fontSize: 12, fontWeight: 700 }}><Plus size={12} /> Generate More</Link>
           </div>
-        </nav>
-
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem 1.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
-            <div>
-              <h1 style={{ fontFamily: 'Syne', fontSize: '1.75rem', fontWeight: 800, color: '#fff', marginBottom: '0.25rem' }}>{domain.business_name}</h1>
-              <p style={{ color: '#a78bfa', fontFamily: 'monospace', fontSize: '0.875rem' }}>{domain.domain}</p>
-            </div>
-            <button onClick={handleRegen} disabled={regen} style={{ padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg,#7c3aed,#db2777)', borderRadius: 12, color: '#fff', fontWeight: 700, border: 'none', cursor: regen ? 'not-allowed' : 'pointer', opacity: regen ? 0.6 : 1 }}>
-              {regen ? '⏳ Regenerating...' : '🔄 Regenerate Pages'}
-            </button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: '1rem', marginBottom: '2rem' }}>
-            {[
-              { label: 'Total Pages', value: pages.length, color: '#a78bfa' },
-              { label: 'Total Views', value: pages.reduce((s, p) => s + (p.views || 0), 0), color: '#f472b6' },
-              { label: 'Status', value: '✓ Live', color: '#4ade80' }
-            ].map((s, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '1.25rem' }}>
-                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', marginBottom: '0.4rem' }}>{s.label}</div>
-                <div style={{ fontFamily: 'Syne', fontSize: '1.75rem', fontWeight: 800, color: s.color }}>{s.value}</div>
-              </div>
-            ))}
-          </div>
-
-          <input type="text" placeholder="Search pages..." value={filter} onChange={e => setFilter(e.target.value)}
-            style={{ marginBottom: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '0.75rem 1rem', color: '#fff', outline: 'none', fontSize: '0.9rem', width: '100%', maxWidth: 400 }} />
-
-          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 20, overflow: 'hidden' }}>
-            <div style={{ maxHeight: '65vh', overflowY: 'auto' }}>
-              {filtered.map((p, i) => (
-                <div key={i} style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'grid', gridTemplateColumns: '1fr 60px 80px', gap: '1rem', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#a78bfa' }}>/{p.slug}</div>
-                    <div style={{ fontSize: '0.775rem', color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>{p.title}</div>
-                  </div>
-                  <div style={{ color: '#4ade80', fontWeight: 700, textAlign: 'right' }}>{p.views || 0}</div>
-                  <a href={`/${p.slug}`} target="_blank" style={{ fontSize: '0.8rem', color: '#a78bfa', textDecoration: 'none', textAlign: 'right' }}>View →</a>
+        </div>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 24px' }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '60px 0', color: '#9ca3af', fontSize: 13 }}>Loading pages...</div>
+          ) : (
+            <>
+              <div style={{ marginBottom: 18, display: 'flex', gap: 10, alignItems: 'center' }}>
+                <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
+                  <Search size={13} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                  <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} placeholder="Search keywords..."
+                    style={{ width: '100%', padding: '9px 12px 9px 32px', border: '1px solid #e5e7eb', borderRadius: 10, fontSize: 13, outline: 'none', background: '#fff', boxSizing: 'border-box' }} />
                 </div>
-              ))}
-              {filtered.length === 0 && <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.2)' }}>No pages found</div>}
-            </div>
-          </div>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: 'rgba(255,255,255,0.2)', textAlign: 'right' }}>{filtered.length} of {pages.length} pages</p>
+                <span style={{ fontSize: 13, color: '#9ca3af' }}>{filtered.length} pages</span>
+              </div>
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, overflow: 'hidden' }}>
+                {paginated.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '48px 0', color: '#9ca3af', fontSize: 13 }}>No pages found.</div>
+                ) : paginated.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', borderBottom: '1px solid #f9fafb' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f1117', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 500 }}>{p.keyword || p.title || `Page ${i+1}`}</div>
+                      {p.slug && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>/{p.slug}</div>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+                      <span style={{ fontSize: 12, color: '#9ca3af' }}>{p.views || 0} views</span>
+                      {p.url && <a href={p.url} target="_blank" rel="noreferrer" style={{ color: '#4f46e5' }}><ExternalLink size={13} /></a>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 20 }}>
+                  {[...Array(Math.min(totalPages, 8))].map((_, i) => (
+                    <button key={i} onClick={() => setPage(i+1)}
+                      style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${page === i+1 ? '#4f46e5' : '#e5e7eb'}`, background: page === i+1 ? '#4f46e5' : '#fff', color: page === i+1 ? '#fff' : '#374151', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      {i+1}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </>
   )
-}
-
-export async function getServerSideProps(context) {
-  const { id } = context.params
-  try {
-    const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL)
-    const domainResult = await sql`SELECT * FROM domains WHERE id = ${id} LIMIT 1`
-    if (!domainResult.length) return { props: { domain: null, initialPages: [] } }
-
-    const domain = domainResult[0]
-    const pagesResult = await sql`SELECT slug, title, views FROM pages WHERE domain_id = ${id} ORDER BY created_at DESC`
-
-    return {
-      props: {
-        domain: { id: domain.id, business_name: domain.business_name, domain: domain.domain, website_url: domain.website_url },
-        initialPages: pagesResult.map(r => ({ slug: r.slug, title: r.title, views: r.views || 0 }))
-      }
-    }
-  } catch {
-    return { props: { domain: null, initialPages: [] } }
-  }
 }

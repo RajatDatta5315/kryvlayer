@@ -1,140 +1,100 @@
 import { useState, useRef, useEffect } from 'react'
 import Head from 'next/head'
+import Link from 'next/link'
+import { Send, Sparkles, ArrowLeft, Bot } from 'lucide-react'
 
 export default function Chat() {
   const [messages, setMessages] = useState([
-    { role: 'nehira', text: 'Hi! I\'m NEHIRA, your AI SEO expert. Ask me anything about keywords, landing pages, SEO strategy, or your KRYVLayer campaigns.' }
+    { role: 'nehira', text: "Hi, I'm NEHIRA — your AI SEO strategist. Ask me anything about keywords, landing pages, GEO optimization, or your KRYVLayer campaigns." }
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
   async function sendMessage(e) {
     e.preventDefault()
     if (!input.trim() || loading) return
-
     const userMsg = input.trim()
     setInput('')
     setMessages(prev => [...prev, { role: 'user', text: userMsg }])
     setLoading(true)
-
     try {
-      const res = await fetch('/api/nehira/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg })
-      })
+      const res = await fetch('/api/nehira/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: userMsg }) })
       const data = await res.json()
-      setMessages(prev => [...prev, { role: 'nehira', text: data.response || 'Sorry, I could not process that.' }])
-    } catch {
-      setMessages(prev => [...prev, { role: 'nehira', text: 'Connection error. Please try again.' }])
-    } finally {
-      setLoading(false)
-    }
+      setMessages(prev => [...prev, { role: 'nehira', text: data.reply || data.message || 'Something went wrong. Try again.' }])
+    } catch { setMessages(prev => [...prev, { role: 'nehira', text: 'Connection error. Please try again.' }]) }
+    setLoading(false)
   }
-
-  const suggestions = [
-    'What keywords should I target for a SaaS in London?',
-    'How do I improve my landing page rankings?',
-    'Generate 10 city-based keyword ideas for fintech',
-    'What makes a good SEO landing page?'
-  ]
 
   return (
     <>
-      <Head>
-        <title>NEHIRA AI Chat — KRYVLayer</title>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
-      </Head>
-
-      <div style={{ minHeight: '100vh', background: '#0a0a14', display: 'flex', flexDirection: 'column', fontFamily: "'DM Sans', sans-serif" }}>
-        <nav style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 1.5rem', flexShrink: 0 }}>
-          <div style={{ maxWidth: 800, margin: '0 auto', height: 60, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <a href="/dashboard" style={{ color: '#a78bfa', textDecoration: 'none', fontSize: '0.875rem' }}>← Dashboard</a>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80' }} />
-              <span style={{ fontFamily: 'Syne', fontWeight: 800, color: '#fff', fontSize: '1rem' }}>NEHIRA AI</span>
+      <Head><title>NEHIRA AI — KRYVLayer</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></Head>
+      <div style={{ minHeight: '100vh', background: '#f8f9fc', fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: '#6b7280', fontSize: 13 }}>
+            <ArrowLeft size={14} /> Dashboard
+          </Link>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={16} color="#fff" />
             </div>
-            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.25)' }}>SEO Expert</span>
-          </div>
-        </nav>
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
-          <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {messages.length === 1 && (
-              <div style={{ marginBottom: '1rem' }}>
-                <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem', marginBottom: '0.75rem' }}>Quick questions:</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {suggestions.map((s, i) => (
-                    <button key={i} onClick={() => setInput(s)}
-                      style={{ padding: '0.5rem 1rem', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 100, color: '#c4b5fd', fontSize: '0.8rem', cursor: 'pointer' }}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {messages.map((m, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                {m.role === 'nehira' && (
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#fff', marginRight: 10, flexShrink: 0, marginTop: 4 }}>N</div>
-                )}
-                <div style={{
-                  maxWidth: '75%', padding: '0.875rem 1.25rem',
-                  background: m.role === 'user' ? 'linear-gradient(135deg,#7c3aed,#db2777)' : 'rgba(255,255,255,0.04)',
-                  border: m.role === 'nehira' ? '1px solid rgba(255,255,255,0.07)' : 'none',
-                  borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
-                  color: '#fff', fontSize: '0.95rem', lineHeight: 1.7, whiteSpace: 'pre-wrap'
-                }}>
-                  {m.text}
-                </div>
-              </div>
-            ))}
-
-            {loading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#db2777)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#fff' }}>N</div>
-                <div style={{ padding: '0.875rem 1.25rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '4px 18px 18px 18px', display: 'flex', gap: 6, alignItems: 'center' }}>
-                  {[0, 1, 2].map(i => (
-                    <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#a78bfa', animation: 'bounce 1s ease-in-out infinite', animationDelay: `${i * 0.15}s` }} />
-                  ))}
-                </div>
-              </div>
-            )}
-            <div ref={bottomRef} />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0f1117' }}>NEHIRA AI</div>
+              <div style={{ fontSize: 11, color: '#9ca3af' }}>KRYVLayer SEO Expert</div>
+            </div>
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '1rem 1.5rem', flexShrink: 0 }}>
-          <form onSubmit={sendMessage} style={{ maxWidth: 800, margin: '0 auto', display: 'flex', gap: '0.75rem' }}>
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Ask NEHIRA about SEO, keywords, or strategy..."
-              style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '0.875rem 1.25rem', color: '#fff', fontSize: '0.95rem', outline: 'none' }}
-            />
+        {/* Messages */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 720, width: '100%', margin: '0 auto' }}>
+          {messages.map((m, i) => (
+            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
+              {m.role === 'nehira' && (
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                  <Bot size={14} color="#fff" />
+                </div>
+              )}
+              <div style={{
+                maxWidth: '75%', padding: '12px 16px', borderRadius: m.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                background: m.role === 'user' ? '#4f46e5' : '#fff',
+                color: m.role === 'user' ? '#fff' : '#0f1117',
+                fontSize: 14, lineHeight: 1.65,
+                boxShadow: m.role === 'user' ? 'none' : '0 1px 4px rgba(0,0,0,0.06)',
+                border: m.role === 'user' ? 'none' : '1px solid #e5e7eb',
+              }}>
+                {m.text}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Bot size={14} color="#fff" />
+              </div>
+              <div style={{ padding: '14px 18px', borderRadius: '18px 18px 18px 4px', background: '#fff', border: '1px solid #e5e7eb', display: 'flex', gap: 4 }}>
+                {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#9ca3af', animation: 'pulse 1.2s ease infinite', animationDelay: `${i * 0.2}s` }} />)}
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input */}
+        <div style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '16px 20px', flexShrink: 0 }}>
+          <form onSubmit={sendMessage} style={{ maxWidth: 720, margin: '0 auto', display: 'flex', gap: 10 }}>
+            <input value={input} onChange={e => setInput(e.target.value)} placeholder="Ask NEHIRA anything about SEO, keywords, or strategy..."
+              style={{ flex: 1, padding: '12px 16px', border: '1px solid #e5e7eb', borderRadius: 12, fontSize: 14, outline: 'none', color: '#0f1117' }} />
             <button type="submit" disabled={loading || !input.trim()}
-              style={{ padding: '0.875rem 1.5rem', background: 'linear-gradient(135deg,#7c3aed,#db2777)', borderRadius: 14, color: '#fff', fontWeight: 700, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, whiteSpace: 'nowrap' }}>
-              Send →
+              style={{ padding: '12px 18px', background: '#4f46e5', border: 'none', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontSize: 14, fontWeight: 700, opacity: loading || !input.trim() ? 0.5 : 1 }}>
+              <Send size={15} />
             </button>
           </form>
         </div>
+        <style>{`@keyframes pulse { 0%,100%{opacity:0.4;transform:scale(0.8)}50%{opacity:1;transform:scale(1)} }`}</style>
       </div>
-
-      <style jsx global>{`
-        @keyframes bounce {
-          0%, 100% { transform: translateY(0); opacity: 0.5; }
-          50% { transform: translateY(-5px); opacity: 1; }
-        }
-      `}</style>
     </>
   )
 }

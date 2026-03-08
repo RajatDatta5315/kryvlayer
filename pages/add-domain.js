@@ -1,9 +1,16 @@
 import { useState } from 'react'
 import Head from 'next/head'
-import GenerationProgress from '../components/GenerationProgress'
+import Link from 'next/link'
+import { Globe, CheckCircle, AlertCircle, ArrowRight, Copy, Check, Loader } from 'lucide-react'
 
-const KRYVLAYER_IP = '76.76.21.21'
-const KRYVLAYER_CNAME = 'cname.kryvlayer.app'
+const S = {
+  page: { minHeight: '100vh', background: '#f8f9fc', fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' },
+  card: { width: '100%', maxWidth: 560, background: '#fff', borderRadius: 20, border: '1px solid #e5e7eb', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', padding: '36px 40px' },
+  label: { display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' },
+  input: { width: '100%', padding: '11px 14px', border: '1px solid #e5e7eb', borderRadius: 10, fontSize: 14, outline: 'none', color: '#0f1117', background: '#fff', boxSizing: 'border-box' },
+  btn: { width: '100%', padding: '13px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 20 },
+  step: (active) => ({ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', opacity: active ? 1 : 0.4 }),
+}
 
 export default function AddDomain() {
   const [step, setStep] = useState(1)
@@ -11,220 +18,144 @@ export default function AddDomain() {
   const [verifyStatus, setVerifyStatus] = useState(null)
   const [pages, setPages] = useState([])
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState(null)
+  const [generating, setGenerating] = useState(false)
 
+  const CNAME = 'cname.kryvlayer.app'
+  const IP = '76.76.21.21'
   const isSubdomain = form.domain.split('.').length > 2
 
-  async function handleSubmit(e) {
+  const copy = (text, key) => { navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000) }
+
+  async function handleStep1(e) {
     e.preventDefault()
-    if (!form.businessName || !form.websiteUrl || !form.domain) {
-      setError('All fields required')
-      return
-    }
-    setStep(2)
+    if (!form.businessName || !form.websiteUrl || !form.domain) { setError('All fields are required'); return }
+    setError(''); setStep(2)
   }
 
   async function checkDNS() {
     setVerifyStatus('checking')
     try {
-      const res = await fetch('/api/domains/verify-dns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain: form.domain })
-      })
+      const res = await fetch('/api/domains/verify-dns', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domain: form.domain }) })
       const data = await res.json()
-      setVerifyStatus(data.connected ? 'valid' : 'invalid')
-    } catch { setVerifyStatus('invalid') }
+      setVerifyStatus(data.verified ? 'verified' : 'failed')
+      if (data.verified) setStep(3)
+    } catch { setVerifyStatus('failed') }
   }
 
   async function generate() {
-    setStep(4)
+    setGenerating(true)
     try {
-      const domainRes = await fetch('/api/domains/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: '1', ...form })
-      })
-      const domainData = await domainRes.json()
-      if (!domainData.success) throw new Error(domainData.error || 'Failed to create domain')
-
-      const genRes = await fetch('/api/generate/auto', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domainId: domainData.domainId })
-      })
-      const genData = await genRes.json()
-      
-      if (!genData.success) throw new Error(genData.error || 'Generation failed')
-      
-      setPages(genData.pages || [])
-    } catch (err) {
-      console.error('Generation error:', err)
-      setError(err.message)
-      setStep(2)
-    }
+      const res = await fetch('/api/domains/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ businessName: form.businessName, websiteUrl: form.websiteUrl, domain: form.domain, userId: '1' }) })
+      const data = await res.json()
+      if (data.success) { setPages(data.pages || []); setStep(4) }
+      else setError(data.error || 'Generation failed')
+    } catch (e) { setError(e.message) }
+    setGenerating(false)
   }
 
   return (
     <>
-      <Head>
-        <title>Add Domain — KRYVLayer</title>
-        <link rel="icon" href="/favicon.ico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-      </Head>
+      <Head><title>Add Domain — KRYVLayer</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" /></Head>
+      <div style={S.page}>
+        <div style={{ marginBottom: 32, textAlign: 'center' }}>
+          <Link href="/dashboard" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>← Back to Dashboard</Link>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#0f1117', marginTop: 12, letterSpacing: '-0.02em' }}>Add a Domain</h1>
+          <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>Connect your domain and generate thousands of SEO pages automatically.</p>
+        </div>
 
-      <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', padding: '2rem 1rem' }}>
-        <div style={{ maxWidth: 640, margin: '0 auto' }}>
-          <a href="/dashboard" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '2rem' }}>
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            Dashboard
-          </a>
-
-          {error && (
-            <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, color: '#ef4444' }}>
-              {error}
+        {/* Steps */}
+        <div style={{ display: 'flex', gap: 24, marginBottom: 28, justifyContent: 'center' }}>
+          {['Details', 'DNS Setup', 'Verify', 'Done'].map((s, i) => (
+            <div key={s} style={S.step(step === i + 1)}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', background: step > i + 1 ? '#4f46e5' : step === i + 1 ? '#4f46e5' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {step > i + 1 ? <CheckCircle size={14} color="#fff" /> : <span style={{ fontSize: 11, fontWeight: 700, color: step === i + 1 ? '#fff' : '#9ca3af' }}>{i + 1}</span>}
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: step === i + 1 ? '#4f46e5' : '#9ca3af' }}>{s}</span>
             </div>
-          )}
+          ))}
+        </div>
 
-          <h1 style={{ fontFamily: 'Syne', fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>Add Domain</h1>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.95rem' }}>Step {step} of 5</p>
+        <div style={S.card}>
+          {error && <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13, marginBottom: 20 }}>{error}</div>}
 
+          {/* Step 1 — Details */}
           {step === 1 && (
-            <form onSubmit={handleSubmit} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: '2rem' }}>
-              {[
-                { label: 'Business Name', key: 'businessName', type: 'text', placeholder: 'Acme Inc.' },
-                { label: 'Website URL', key: 'websiteUrl', type: 'url', placeholder: 'https://mycompany.com', hint: 'NEHIRA will analyze this URL' },
-                { label: 'Domain for Pages', key: 'domain', type: 'text', placeholder: 'seo.mycompany.com', hint: 'Where your landing pages will live' }
-              ].map(f => (
-                <div key={f.key} style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{f.label}</label>
-                  <input type={f.type} required placeholder={f.placeholder} value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                    style={{ width: '100%', background: 'var(--bg-tertiary)', border: '1px solid var(--border)', borderRadius: 10, padding: '0.875rem 1rem', color: 'var(--text-primary)', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s' }}
-                    onFocus={e => e.target.style.borderColor = 'var(--accent-primary)'}
-                    onBlur={e => e.target.style.borderColor = 'var(--border)'}
-                  />
-                  {f.hint && <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.4rem' }}>{f.hint}</p>}
-                </div>
-              ))}
-              <button type="submit" style={{ width: '100%', padding: '0.95rem', background: 'var(--accent-primary)', borderRadius: 10, color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '1rem' }}>
-                Continue →
-              </button>
+            <form onSubmit={handleStep1}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={S.label}>Business Name</label>
+                <input style={S.input} placeholder="e.g. Acme Corp" value={form.businessName} onChange={e => setForm(f => ({ ...f, businessName: e.target.value }))} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={S.label}>Website URL</label>
+                <input style={S.input} placeholder="https://acmecorp.com" value={form.websiteUrl} onChange={e => setForm(f => ({ ...f, websiteUrl: e.target.value }))} />
+              </div>
+              <div style={{ marginBottom: 4 }}>
+                <label style={S.label}>SEO Domain (where pages will live)</label>
+                <input style={S.input} placeholder="seo.acmecorp.com" value={form.domain} onChange={e => setForm(f => ({ ...f, domain: e.target.value }))} />
+                <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>Use a subdomain like seo.yourdomain.com for best results.</p>
+              </div>
+              <button type="submit" style={S.btn}>Continue <ArrowRight size={14} style={{ display: 'inline' }} /></button>
             </form>
           )}
 
+          {/* Step 2 — DNS */}
           {step === 2 && (
-            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>DNS Setup</h2>
-              <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: '1.5rem', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '0.75rem 1rem', fontSize: '0.9rem' }}>
-                  <span style={{ color: 'var(--text-tertiary)', fontWeight: 600 }}>Type:</span>
-                  <code style={{ background: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: 6, color: 'var(--accent-primary)', fontWeight: 700 }}>
-                    {isSubdomain ? 'CNAME' : 'A'}
-                  </code>
-                  
-                  <span style={{ color: 'var(--text-tertiary)', fontWeight: 600 }}>Name:</span>
-                  <code style={{ background: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: 6, color: 'var(--text-primary)' }}>
-                    {isSubdomain ? form.domain.split('.')[0] : '@'}
-                  </code>
-                  
-                  <span style={{ color: 'var(--text-tertiary)', fontWeight: 600 }}>Value:</span>
-                  <code style={{ background: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: 6, color: 'var(--text-primary)', wordBreak: 'break-all' }}>
-                    {isSubdomain ? KRYVLAYER_CNAME : KRYVLAYER_IP}
-                  </code>
+            <div>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#0f1117', marginBottom: 6 }}>Configure DNS</h2>
+              <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>Add this DNS record in your domain registrar (Cloudflare, Namecheap, etc.)</p>
+              <div style={{ background: '#f8f9fc', border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em' }}>DNS Record</span>
+                  <span style={{ fontSize: 11, background: '#e0e7ff', color: '#4f46e5', padding: '2px 8px', borderRadius: 6, fontWeight: 700 }}>{isSubdomain ? 'CNAME' : 'A Record'}</span>
                 </div>
+                {[
+                  { label: 'Type', value: isSubdomain ? 'CNAME' : 'A' },
+                  { label: 'Name / Host', value: form.domain.split('.')[0] },
+                  { label: 'Value / Points to', value: isSubdomain ? CNAME : IP },
+                  { label: 'TTL', value: 'Auto' },
+                ].map(row => (
+                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
+                    <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>{row.label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#0f1117', fontWeight: 600 }}>{row.value}</span>
+                      <button onClick={() => copy(row.value, row.label)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
+                        {copied === row.label ? <Check size={12} color="#4f46e5" /> : <Copy size={12} color="#9ca3af" />}
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
+              <button onClick={checkDNS} disabled={verifyStatus === 'checking'} style={{ ...S.btn, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                {verifyStatus === 'checking' ? <><Loader size={14} className="animate-spin" /> Checking DNS...</> : 'Verify DNS →'}
+              </button>
+              {verifyStatus === 'failed' && <p style={{ color: '#dc2626', fontSize: 12, textAlign: 'center', marginTop: 10 }}>DNS not verified yet. DNS propagation can take up to 48h. Try again in a few minutes.</p>}
+            </div>
+          )}
 
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: '1.5rem' }}>
-                <p style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Quick Steps:</p>
-                <ol style={{ paddingLeft: '1.25rem' }}>
-                  <li>Log into your domain registrar</li>
-                  <li>Find DNS or Domain Settings</li>
-                  <li>Add the record above</li>
-                  <li>Wait 1–30 minutes for DNS to update</li>
-                </ol>
+          {/* Step 3 — Verified, Generate */}
+          {step === 3 && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#f0fdf4', border: '2px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <CheckCircle size={28} color="#16a34a" />
               </div>
-
-              <button onClick={() => setStep(3)} style={{ width: '100%', padding: '0.95rem', background: 'var(--accent-primary)', borderRadius: 10, color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-                I've Added It →
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f1117', marginBottom: 8 }}>DNS Verified!</h2>
+              <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 28 }}>Your domain is pointing correctly. Now let NEHIRA AI generate your first batch of SEO pages.</p>
+              <button onClick={generate} disabled={generating} style={{ ...S.btn, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                {generating ? <><Loader size={14} /> Generating 100 pages...</> : '⚡ Generate 100 Pages Now'}
               </button>
             </div>
           )}
 
-          {step === 3 && (
-            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: '2.5rem', textAlign: 'center' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '2rem' }}>Verify Connection</h2>
-              
-              <div style={{ marginBottom: '2rem' }}>
-                <code style={{ background: 'rgba(99,102,241,0.1)', padding: '10px 20px', borderRadius: 100, color: 'var(--accent-primary)', fontSize: '1rem', fontWeight: 600 }}>
-                  {form.domain}
-                </code>
-              </div>
-
-              {verifyStatus === null && (
-                <button onClick={checkDNS} style={{ width: '100%', padding: '0.95rem', background: 'var(--accent-primary)', borderRadius: 10, color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-                  Check DNS Connection
-                </button>
-              )}
-
-              {verifyStatus === 'checking' && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '1rem', color: 'var(--text-secondary)' }}>
-                  <div style={{ width: 20, height: 20, border: '2px solid var(--border)', borderTopColor: 'var(--accent-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                  Checking DNS records...
-                </div>
-              )}
-
-              {verifyStatus === 'valid' && (
-                <div>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✓</div>
-                  <h3 style={{ color: 'var(--accent-success)', fontSize: '1.25rem', marginBottom: '0.5rem' }}>Connected!</h3>
-                  <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>Domain is pointing to KRYVLayer</p>
-                  <button onClick={generate} style={{ width: '100%', padding: '0.95rem', background: 'var(--accent-primary)', borderRadius: 10, color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-                    Generate Pages →
-                  </button>
-                </div>
-              )}
-
-              {verifyStatus === 'invalid' && (
-                <div>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠</div>
-                  <h3 style={{ color: 'var(--accent-warning)', marginBottom: '0.5rem' }}>Not Connected</h3>
-                  <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>DNS not propagated yet. Check settings or wait.</p>
-                  <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
-                    <button onClick={() => setStep(2)} style={{ flex: 1, padding: '0.875rem', background: 'var(--bg-tertiary)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer' }}>← Back</button>
-                    <button onClick={checkDNS} style={{ flex: 1, padding: '0.875rem', background: 'var(--accent-primary)', borderRadius: 10, color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer' }}>Try Again</button>
-                  </div>
-                  <button onClick={generate} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '0.85rem', textDecoration: 'underline', cursor: 'pointer' }}>
-                    Skip & generate anyway
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 4 && <GenerationProgress onComplete={() => setStep(5)} />}
-
-          {step === 5 && (
-            <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: '2.5rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '3.5rem', marginBottom: '1.5rem' }}>🎉</div>
-              <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>Pages Are Live!</h2>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-                <strong style={{ color: 'var(--accent-primary)' }}>{pages.length} pages</strong> generated on <strong>{form.domain}</strong>
-              </p>
-
-              <div style={{ maxHeight: 300, overflowY: 'auto', marginBottom: '2rem', textAlign: 'left' }}>
-                {pages.slice(0, 10).map((p, i) => (
-                  <div key={i} style={{ padding: '0.75rem', background: 'var(--bg-tertiary)', border: '1px solid var(--border)', borderRadius: 8, marginBottom: '0.5rem', fontSize: '0.85rem', fontFamily: 'monospace' }}>
-                    <a href={`https://${form.domain}/${p.slug}`} target="_blank" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>
-                      /{p.slug} ↗
-                    </a>
-                  </div>
-                ))}
-                {pages.length > 10 && <p style={{ textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem', padding: '0.5rem' }}>+ {pages.length - 10} more</p>}
-              </div>
-
-              <a href="/dashboard" style={{ display: 'block', padding: '0.95rem', background: 'var(--accent-primary)', borderRadius: 10, color: '#fff', fontWeight: 700, textDecoration: 'none', textAlign: 'center' }}>
-                Back to Dashboard
-              </a>
+          {/* Step 4 — Done */}
+          {step === 4 && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🚀</div>
+              <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f1117', marginBottom: 8 }}>{pages.length || 100} pages live!</h2>
+              <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 28 }}>Your SEO pages are generating. They will be indexable within minutes.</p>
+              <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '12px 24px', background: '#4f46e5', borderRadius: 12, color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
+                View in Dashboard →
+              </Link>
             </div>
           )}
         </div>
