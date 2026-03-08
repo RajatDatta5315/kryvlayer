@@ -4,216 +4,121 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>KRYVLayer — AI-Powered Programmatic SEO Platform</title>
-        <link rel="icon" href="/favicon.ico" />
+        <title>KRYVLayer — AI Programmatic SEO & Infinite Landing Pages</title>
+        <link rel="icon" href="/logo.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Generate thousands of SEO landing pages automatically on your domain. AI-powered, zero maintenance." />
+        <meta name="description" content="Connect your domain once. AI generates thousands of SEO-optimized landing pages automatically. Built on KRYV Network." />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </Head>
 
-      <div className="page">
-        {/* Grid background */}
-        <div className="grid-bg" />
+      <div style={{ minHeight: '100vh', background: '#fff', fontFamily: 'Inter, sans-serif', color: '#0f1117' }}>
 
-        {/* Navbar */}
-        <nav className="nav">
-          <div className="container">
-            <div className="nav-content">
-              <a href="/" className="logo">
-                <div className="logo-icon">K</div>
-                <span className="logo-text">KRYVLayer</span>
+        {/* NAV */}
+        <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #e5e7eb', padding: '0 24px' }}>
+          <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
+            <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 16 }}>K</div>
+              <span style={{ fontSize: 18, fontWeight: 800, color: '#0f1117', letterSpacing: '-0.02em' }}>KRYVLayer</span>
+            </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <a href="#how" style={{ padding: '8px 16px', fontSize: 14, color: '#6b7280', textDecoration: 'none', fontWeight: 500 }}>How it works</a>
+              <a href="/dashboard" style={{ padding: '10px 20px', background: '#4f46e5', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                Get Started →
               </a>
-              <div className="nav-links">
-                <a href="#features" className="nav-link">Features</a>
-                <a href="#pricing" className="nav-link">Pricing</a>
-                <a href="/dashboard" className="btn-primary">Get Started</a>
-              </div>
             </div>
           </div>
         </nav>
 
-        {/* Hero */}
-        <section className="hero">
-          <div className="container">
-            <div className="hero-badge">
-              <span className="badge-dot" />
-              <span>Powered by NEHIRA AI</span>
-            </div>
+        {/* HERO */}
+        <section style={{ padding: '80px 24px 64px', textAlign: 'center', maxWidth: 1140, margin: '0 auto' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', background: '#f0f0ff', border: '1px solid #c7d2fe', borderRadius: 100, fontSize: 13, color: '#4f46e5', fontWeight: 600, marginBottom: 24 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4f46e5', display: 'inline-block' }}></span>
+            Powered by NEHIRA AI
+          </div>
 
-            <h1 className="hero-title">
-              Generate Infinite<br />
-              SEO Landing Pages<br />
-              <span className="gradient">Automatically</span>
-            </h1>
+          <h1 style={{ fontSize: 'clamp(36px, 6vw, 68px)', fontWeight: 900, color: '#0f1117', lineHeight: 1.08, letterSpacing: '-0.04em', margin: '0 0 20px' }}>
+            Generate Infinite<br />
+            <span style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SEO Landing Pages</span><br />
+            Automatically
+          </h1>
 
-            <p className="hero-subtitle">
-              Connect your domain once. Our AI analyzes your site and creates thousands of unique, 
-              SEO-optimized pages — all live on YOUR domain in minutes.
-            </p>
+          <p style={{ fontSize: 18, color: '#6b7280', maxWidth: 580, margin: '0 auto 40px', lineHeight: 1.7, fontWeight: 400 }}>
+            Connect your domain once. NEHIRA analyzes your site and creates thousands of unique,
+            keyword-targeted landing pages — live on your domain in minutes. Zero maintenance.
+          </p>
 
-            <div className="hero-cta">
-              <a href="/dashboard" className="btn-primary btn-large">
-                Start Free Trial
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </a>
-              <a href="#features" className="btn-ghost">
-                See How It Works
-              </a>
-            </div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 64 }}>
+            <a href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 28px', background: '#4f46e5', borderRadius: 12, color: '#fff', fontWeight: 700, fontSize: 16, textDecoration: 'none', boxShadow: '0 4px 20px rgba(79,70,229,0.3)' }}>
+              Start Free Trial
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a href="#how" style={{ display: 'inline-flex', alignItems: 'center', padding: '14px 28px', border: '1.5px solid #e5e7eb', borderRadius: 12, color: '#374151', fontWeight: 600, fontSize: 16, textDecoration: 'none' }}>
+              See How It Works
+            </a>
+          </div>
 
-            {/* Stats cards */}
-            <div className="stats-grid">
-              <div className="stat-card glass">
-                <div className="stat-value">∞</div>
-                <div className="stat-label">Pages Generated</div>
+          {/* Stats row */}
+          <div style={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap', background: '#f8f9fc', border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', maxWidth: 700, margin: '0 auto' }}>
+            {[['∞', 'Pages Generated'], ['5 min', 'Setup Time'], ['100%', 'Your Domain'], ['0', 'Maintenance']].map(([val, label], i) => (
+              <div key={i} style={{ flex: '1 1 150px', padding: '24px 20px', borderRight: i < 3 ? '1px solid #e5e7eb' : 'none', textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#4f46e5', marginBottom: 4 }}>{val}</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>{label}</div>
               </div>
-              <div className="stat-card glass">
-                <div className="stat-value">5min</div>
-                <div className="stat-label">Setup Time</div>
-              </div>
-              <div className="stat-card glass">
-                <div className="stat-value">Zero</div>
-                <div className="stat-label">Maintenance</div>
-              </div>
-            </div>
+            ))}
           </div>
         </section>
 
-        {/* Features */}
-        <section id="features" className="features">
-          <div className="container">
-            <div className="section-header">
-              <span className="section-label">How It Works</span>
-              <h2 className="section-title">Three Steps to SEO Domination</h2>
+        {/* HOW IT WORKS */}
+        <section id="how" style={{ padding: '80px 24px', background: '#f8f9fc', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
+          <div style={{ maxWidth: 1140, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 56 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#4f46e5', marginBottom: 12 }}>How It Works</div>
+              <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, color: '#0f1117', letterSpacing: '-0.03em' }}>Three steps to SEO domination</h2>
             </div>
 
-            <div className="features-grid">
-              <div className="feature-card glass">
-                <div className="feature-number">01</div>
-                <div className="feature-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+              {[
+                { num: '01', title: 'Connect Domain', desc: 'Point a subdomain to KRYVLayer. Simple DNS record — takes under 5 minutes with any registrar.', icon: '🌐' },
+                { num: '02', title: 'AI Generates Pages', desc: 'NEHIRA AI analyzes your site, researches keywords, and creates hundreds of unique, SEO-optimized landing pages.', icon: '⚡' },
+                { num: '03', title: 'Pages Go Live', desc: 'All pages instantly live on your domain. Google indexes them. Traffic grows automatically. You do nothing.', icon: '🚀' },
+              ].map((step, i) => (
+                <div key={i} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 20, padding: 32, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: '#f0f0ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{step.icon}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#d1d5db' }}>{step.num}</div>
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#0f1117', marginBottom: 10 }}>{step.title}</h3>
+                  <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7 }}>{step.desc}</p>
                 </div>
-                <h3 className="feature-title">Connect Domain</h3>
-                <p className="feature-desc">Point your domain DNS to KRYVLayer. Simple one-time setup that takes 5 minutes.</p>
-              </div>
-
-              <div className="feature-card glass">
-                <div className="feature-number">02</div>
-                <div className="feature-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-                </div>
-                <h3 className="feature-title">AI Generates Pages</h3>
-                <p className="feature-desc">NEHIRA analyzes your site and creates hundreds of unique, keyword-targeted landing pages.</p>
-              </div>
-
-              <div className="feature-card glass">
-                <div className="feature-number">03</div>
-                <div className="feature-icon">
-                  <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                </div>
-                <h3 className="feature-title">Pages Go Live</h3>
-                <p className="feature-desc">All pages instantly live on your domain. Zero maintenance. Just watch your traffic grow.</p>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="cta-section">
-          <div className="container">
-            <div className="cta-card glass">
-              <h2 className="cta-title">Ready to Scale Your SEO?</h2>
-              <p className="cta-subtitle">Join businesses generating thousands of landing pages automatically</p>
-              <a href="/dashboard" className="btn-primary btn-large">
-                Start Free Trial
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </a>
-            </div>
+        <section style={{ padding: '80px 24px', textAlign: 'center' }}>
+          <div style={{ maxWidth: 600, margin: '0 auto' }}>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 900, color: '#0f1117', letterSpacing: '-0.03em', marginBottom: 16 }}>
+              Ready to scale your SEO?
+            </h2>
+            <p style={{ fontSize: 16, color: '#6b7280', marginBottom: 32, lineHeight: 1.7 }}>
+              Start generating landing pages on your domain today. No credit card required.
+            </p>
+            <a href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 36px', background: '#4f46e5', borderRadius: 14, color: '#fff', fontWeight: 800, fontSize: 16, textDecoration: 'none', boxShadow: '0 6px 24px rgba(79,70,229,0.35)' }}>
+              Get Started Free →
+            </a>
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="footer">
-          <div className="container">
-            <div className="footer-content">
-              <span>© 2026 KRYVLayer</span>
-              <span>Powered by NEHIRA AI</span>
-            </div>
+        {/* FOOTER */}
+        <footer style={{ borderTop: '1px solid #e5e7eb', padding: '24px', background: '#f8f9fc' }}>
+          <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <span style={{ fontSize: 13, color: '#9ca3af' }}>© 2026 KRYVLayer — Part of <a href="https://kryv.network" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>KRYV Network</a></span>
+            <a href="/dashboard" style={{ fontSize: 13, color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>Launch Dashboard →</a>
           </div>
         </footer>
+
       </div>
-
-      <style jsx global>{`
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { scroll-behavior: smooth; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0b14; color: #e5e7eb; }
-      `}</style>
-
-      <style jsx>{`
-        .page { min-height: 100vh; position: relative; }
-        .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px); background-size: 50px 50px; pointer-events: none; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
-        
-        /* Nav */
-        .nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); background: rgba(10,11,20,0.8); border-bottom: 1px solid rgba(255,255,255,0.08); }
-        .nav-content { display: flex; justify-content: space-between; align-items: center; height: 70px; }
-        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-        .logo-icon { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 1.1rem; }
-        .logo-text { font-size: 1.25rem; font-weight: 700; color: #fff; }
-        .nav-links { display: flex; align-items: center; gap: 1.5rem; }
-        .nav-link { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.95rem; transition: color .2s; }
-        .nav-link:hover { color: #fff; }
-
-        /* Buttons */
-        .btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 0.75rem 1.5rem; background: #3b82f6; border-radius: 10px; color: #fff; font-weight: 600; font-size: 0.95rem; text-decoration: none; border: none; cursor: pointer; transition: all .2s; }
-        .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
-        .btn-large { padding: 1rem 2rem; font-size: 1.05rem; }
-        .btn-ghost { display: inline-flex; align-items: center; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: rgba(255,255,255,0.8); font-weight: 600; text-decoration: none; transition: all .2s; }
-        .btn-ghost:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
-
-        /* Hero */
-        .hero { padding: 6rem 0 5rem; text-align: center; }
-        .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 100px; font-size: 0.85rem; color: rgba(59,130,246,0.9); margin-bottom: 2rem; }
-        .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; animation: pulse 2s ease-in-out infinite; }
-        .hero-title { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 800; line-height: 1.1; color: #fff; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
-        .gradient { background: linear-gradient(135deg, #3b82f6, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero-subtitle { font-size: clamp(1rem, 2.5vw, 1.15rem); color: rgba(255,255,255,0.6); max-width: 700px; margin: 0 auto 2.5rem; line-height: 1.7; }
-        .hero-cta { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 4rem; }
-
-        /* Stats */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 700px; margin: 0 auto; }
-        .stat-card { padding: 1.5rem; text-align: center; }
-        .stat-value { font-size: 2rem; font-weight: 800; color: #3b82f6; margin-bottom: 0.25rem; }
-        .stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
-
-        /* Glass effect */
-        .glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(10px); border-radius: 16px; }
-
-        /* Features */
-        .features { padding: 5rem 0; background: rgba(255,255,255,0.01); }
-        .section-header { text-align: center; margin-bottom: 4rem; }
-        .section-label { display: inline-block; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #3b82f6; margin-bottom: 1rem; }
-        .section-title { font-size: clamp(1.75rem, 4vw, 2.75rem); font-weight: 800; color: #fff; }
-        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
-        .feature-card { padding: 2rem; transition: transform .2s; }
-        .feature-card:hover { transform: translateY(-4px); }
-        .feature-number { font-size: 0.75rem; font-weight: 700; color: rgba(59,130,246,0.5); margin-bottom: 1rem; }
-        .feature-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(59,130,246,0.1); display: flex; align-items: center; justify-content: center; color: #3b82f6; margin-bottom: 1.5rem; }
-        .feature-title { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 0.75rem; }
-        .feature-desc { color: rgba(255,255,255,0.6); line-height: 1.7; }
-
-        /* CTA */
-        .cta-section { padding: 5rem 0; }
-        .cta-card { padding: 4rem 2rem; text-align: center; }
-        .cta-title { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; color: #fff; margin-bottom: 1rem; }
-        .cta-subtitle { font-size: 1.1rem; color: rgba(255,255,255,0.6); margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto; }
-
-        /* Footer */
-        .footer { border-top: 1px solid rgba(255,255,255,0.08); padding: 2rem 0; }
-        .footer-content { display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255,255,255,0.4); flex-wrap: wrap; gap: 1rem; }
-
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-        @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } .nav-link { display: none; } }
-      `}</style>
     </>
   )
 }
