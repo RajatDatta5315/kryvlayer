@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { Globe, CheckCircle, AlertCircle, ArrowRight, Copy, Check, Loader } from 'lucide-react'
 
 const S = {
-  page: { minHeight: '100vh', background: '#f8f9fc', fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' },
-  card: { width: '100%', maxWidth: 560, background: '#fff', borderRadius: 20, border: '1px solid #e5e7eb', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', padding: '36px 40px' },
-  label: { display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' },
-  input: { width: '100%', padding: '11px 14px', border: '1px solid #e5e7eb', borderRadius: 10, fontSize: 14, outline: 'none', color: '#0f1117', background: '#fff', boxSizing: 'border-box' },
-  btn: { width: '100%', padding: '13px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 20 },
+  page: { minHeight: '100vh', background: '#050505', fontFamily: 'Inter, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' },
+  card: { width: '100%', maxWidth: 560, background: 'rgba(255,255,255,0.04)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 4px 24px rgba(0,0,0,0.06)', padding: '36px 40px' },
+  label: { display: 'block', fontSize: 12, fontWeight: 700, color: 'rgba(237,237,237,0.7)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' },
+  input: { width: '100%', padding: '11px 14px', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, fontSize: 14, outline: 'none', color: '#ededed', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box' },
+  btn: { width: '100%', padding: '13px', background: '#6366f1', color: '#050505', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 20 },
   step: (active) => ({ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', opacity: active ? 1 : 0.4 }),
 }
 
@@ -59,9 +59,9 @@ export default function AddDomain() {
       <Head><title>Add Domain — KRYVLayer</title><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" /></Head>
       <div style={S.page}>
         <div style={{ marginBottom: 32, textAlign: 'center' }}>
-          <Link href="/dashboard" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>← Back to Dashboard</Link>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#0f1117', marginTop: 12, letterSpacing: '-0.02em' }}>Add a Domain</h1>
-          <p style={{ fontSize: 14, color: '#9ca3af', marginTop: 6 }}>Connect your domain and generate thousands of SEO pages automatically.</p>
+          <Link href="/dashboard" style={{ fontSize: 13, color: 'rgba(237,237,237,0.4)', textDecoration: 'none' }}>← Back to Dashboard</Link>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#ededed', marginTop: 12, letterSpacing: '-0.02em' }}>Add a Domain</h1>
+          <p style={{ fontSize: 14, color: 'rgba(237,237,237,0.25)', marginTop: 6 }}>Connect your domain and generate thousands of SEO pages automatically.</p>
         </div>
 
         {/* Steps */}
@@ -77,7 +77,7 @@ export default function AddDomain() {
         </div>
 
         <div style={S.card}>
-          {error && <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13, marginBottom: 20 }}>{error}</div>}
+          {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 20 }}>{error}</div>}
 
           {/* Step 1 — Details */}
           {step === 1 && (
@@ -93,7 +93,7 @@ export default function AddDomain() {
               <div style={{ marginBottom: 4 }}>
                 <label style={S.label}>SEO Domain (where pages will live)</label>
                 <input style={S.input} placeholder="seo.acmecorp.com" value={form.domain} onChange={e => setForm(f => ({ ...f, domain: e.target.value }))} />
-                <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>Use a subdomain like seo.yourdomain.com for best results.</p>
+                <p style={{ fontSize: 11, color: 'rgba(237,237,237,0.25)', marginTop: 6 }}>Use a subdomain like seo.yourdomain.com for best results.</p>
               </div>
               <button type="submit" style={S.btn}>Continue <ArrowRight size={14} style={{ display: 'inline' }} /></button>
             </form>
@@ -102,12 +102,12 @@ export default function AddDomain() {
           {/* Step 2 — DNS */}
           {step === 2 && (
             <div>
-              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#0f1117', marginBottom: 6 }}>Configure DNS</h2>
-              <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>Add this DNS record in your domain registrar (Cloudflare, Namecheap, etc.)</p>
-              <div style={{ background: '#f8f9fc', border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, marginBottom: 20 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#ededed', marginBottom: 6 }}>Configure DNS</h2>
+              <p style={{ fontSize: 13, color: 'rgba(237,237,237,0.4)', marginBottom: 20 }}>Add this DNS record in your domain registrar (Cloudflare, Namecheap, etc.)</p>
+              <div style={{ background: '#050505', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 18, marginBottom: 20 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em' }}>DNS Record</span>
-                  <span style={{ fontSize: 11, background: '#e0e7ff', color: '#4f46e5', padding: '2px 8px', borderRadius: 6, fontWeight: 700 }}>{isSubdomain ? 'CNAME' : 'A Record'}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(237,237,237,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>DNS Record</span>
+                  <span style={{ fontSize: 11, background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', padding: '2px 8px', borderRadius: 6, fontWeight: 700 }}>{isSubdomain ? 'CNAME' : 'A Record'}</span>
                 </div>
                 {[
                   { label: 'Type', value: isSubdomain ? 'CNAME' : 'A' },
@@ -116,9 +116,9 @@ export default function AddDomain() {
                   { label: 'TTL', value: 'Auto' },
                 ].map(row => (
                   <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
-                    <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>{row.label}</span>
+                    <span style={{ fontSize: 12, color: 'rgba(237,237,237,0.25)', fontWeight: 500 }}>{row.label}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#0f1117', fontWeight: 600 }}>{row.value}</span>
+                      <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#ededed', fontWeight: 600 }}>{row.value}</span>
                       <button onClick={() => copy(row.value, row.label)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
                         {copied === row.label ? <Check size={12} color="#4f46e5" /> : <Copy size={12} color="#9ca3af" />}
                       </button>
@@ -129,7 +129,7 @@ export default function AddDomain() {
               <button onClick={checkDNS} disabled={verifyStatus === 'checking'} style={{ ...S.btn, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 {verifyStatus === 'checking' ? <><Loader size={14} className="animate-spin" /> Checking DNS...</> : 'Verify DNS →'}
               </button>
-              {verifyStatus === 'failed' && <p style={{ color: '#dc2626', fontSize: 12, textAlign: 'center', marginTop: 10 }}>DNS not verified yet. DNS propagation can take up to 48h. Try again in a few minutes.</p>}
+              {verifyStatus === 'failed' && <p style={{ color: '#fca5a5', fontSize: 12, textAlign: 'center', marginTop: 10 }}>DNS not verified yet. DNS propagation can take up to 48h. Try again in a few minutes.</p>}
             </div>
           )}
 
@@ -139,8 +139,8 @@ export default function AddDomain() {
               <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#f0fdf4', border: '2px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                 <CheckCircle size={28} color="#16a34a" />
               </div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f1117', marginBottom: 8 }}>DNS Verified!</h2>
-              <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 28 }}>Your domain is pointing correctly. Now let NEHIRA AI generate your first batch of SEO pages.</p>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: '#ededed', marginBottom: 8 }}>DNS Verified!</h2>
+              <p style={{ fontSize: 13, color: 'rgba(237,237,237,0.4)', marginBottom: 28 }}>Your domain is pointing correctly. Now let NEHIRA AI generate your first batch of SEO pages.</p>
               <button onClick={generate} disabled={generating} style={{ ...S.btn, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 {generating ? <><Loader size={14} /> Generating 100 pages...</> : '⚡ Generate 100 Pages Now'}
               </button>
@@ -151,9 +151,9 @@ export default function AddDomain() {
           {step === 4 && (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🚀</div>
-              <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0f1117', marginBottom: 8 }}>{pages.length || 100} pages live!</h2>
-              <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 28 }}>Your SEO pages are generating. They will be indexable within minutes.</p>
-              <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '12px 24px', background: '#4f46e5', borderRadius: 12, color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 900, color: '#ededed', marginBottom: 8 }}>{pages.length || 100} pages live!</h2>
+              <p style={{ fontSize: 13, color: 'rgba(237,237,237,0.4)', marginBottom: 28 }}>Your SEO pages are generating. They will be indexable within minutes.</p>
+              <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '12px 24px', background: '#6366f1', borderRadius: 12, color: '#050505', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
                 View in Dashboard →
               </Link>
             </div>
