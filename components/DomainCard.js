@@ -1,30 +1,57 @@
+import { Globe, BarChart2, Download, Trash2, Plus, ExternalLink, CheckCircle } from 'lucide-react'
+
 export default function DomainCard({ domain, onDelete, onBulkGenerate }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+    <div style={{
+      background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16,
+      padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+      transition: 'box-shadow 0.2s',
+    }}
+      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(79,70,229,0.1)'}
+      onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.05)'}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
         <div>
-          <h3 style={{ fontFamily: 'Syne', fontWeight: 700, color: '#fff', marginBottom: 4, fontSize: '1rem' }}>{domain.business_name}</h3>
-          <p style={{ color: '#a78bfa', fontFamily: 'monospace', fontSize: '0.8rem' }}>{domain.domain}</p>
+          <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f1117', marginBottom: 4, letterSpacing: '-0.01em' }}>
+            {domain.business_name}
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Globe size={12} color="#9ca3af" />
+            <span style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace' }}>{domain.domain}</span>
+          </div>
         </div>
-        <span style={{ padding: '3px 10px', background: 'rgba(74,222,128,0.12)', color: '#4ade80', borderRadius: 100, fontSize: '0.7rem', fontWeight: 600 }}>Live</span>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: '0.875rem', textAlign: 'center' }}>
-          <div style={{ fontFamily: 'Syne', fontSize: '1.5rem', fontWeight: 800, color: '#a78bfa' }}>{domain.page_count || 0}</div>
-          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>Pages</div>
-        </div>
-        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: '0.875rem', textAlign: 'center' }}>
-          <div style={{ fontFamily: 'Syne', fontSize: '1.5rem', fontWeight: 800, color: '#f472b6' }}>{domain.total_views || 0}</div>
-          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>Views</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 100 }}>
+          <CheckCircle size={10} color="#16a34a" />
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a' }}>Live</span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-        <a href={`/domain/${domain.id}`} style={{ flex: 1, textAlign: 'center', padding: '0.6rem 0.75rem', background: 'rgba(124,58,237,0.15)', color: '#a78bfa', borderRadius: 10, fontSize: '0.8rem', fontWeight: 600, textDecoration: 'none' }}>View Pages</a>
-        <button onClick={() => onBulkGenerate(domain.id, 100)} style={{ flex: 1, padding: '0.6rem 0.75rem', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', borderRadius: 10, fontSize: '0.8rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}>+ More Pages</button>
-        <a href={`/api/export/csv?domainId=${domain.id}`} style={{ padding: '0.6rem 0.75rem', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', borderRadius: 10, fontSize: '0.8rem', border: '1px solid rgba(255,255,255,0.06)', textDecoration: 'none' }}>CSV</a>
-        <button onClick={() => onDelete(domain.id, domain.business_name)} style={{ padding: '0.6rem 0.75rem', background: 'rgba(239,68,68,0.08)', color: 'rgba(239,68,68,0.6)', borderRadius: 10, fontSize: '0.8rem', border: '1px solid rgba(239,68,68,0.15)', cursor: 'pointer' }}>🗑</button>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+        <div style={{ background: '#f8f9fc', border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px', textAlign: 'center' }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#4f46e5', letterSpacing: '-0.02em', lineHeight: 1 }}>{domain.page_count || 0}</div>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, fontWeight: 500 }}>Pages Generated</div>
+        </div>
+        <div style={{ background: '#f8f9fc', border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px', textAlign: 'center' }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#7c3aed', letterSpacing: '-0.02em', lineHeight: 1 }}>{domain.total_views || 0}</div>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, fontWeight: 500 }}>Total Views</div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <a href={`/domain/${domain.id}`} style={{ flex: 1, minWidth: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', background: '#f0f0ff', color: '#4f46e5', borderRadius: 10, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+          <ExternalLink size={12} /> View Pages
+        </a>
+        <button onClick={() => onBulkGenerate(domain.id, 100)} style={{ flex: 1, minWidth: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', background: '#fff', color: '#374151', borderRadius: 10, fontSize: 12, fontWeight: 700, border: '1px solid #e5e7eb', cursor: 'pointer' }}>
+          <Plus size={12} /> Generate
+        </button>
+        <a href={`/api/export/csv?domainId=${domain.id}`} style={{ padding: '9px 12px', background: '#f8f9fc', color: '#9ca3af', borderRadius: 10, fontSize: 12, border: '1px solid #e5e7eb', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+          <Download size={12} />
+        </a>
+        <button onClick={() => onDelete(domain.id, domain.business_name)} style={{ padding: '9px 12px', background: '#fff5f5', color: '#ef4444', borderRadius: 10, fontSize: 12, border: '1px solid #fee2e2', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+          <Trash2 size={12} />
+        </button>
       </div>
     </div>
   )

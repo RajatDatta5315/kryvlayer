@@ -1,48 +1,83 @@
-export default function Sidebar({ user, view, setView, fetchStats, sidebarOpen, setSidebarOpen }) {
-  const navItems = [
-    { id: 'domains', icon: '🌐', label: 'Domains' },
-    { id: 'analytics', icon: '📊', label: 'Analytics' },
-    { id: 'chat', icon: '🤖', label: 'NEHIRA AI', href: '/chat' },
-  ]
+import { Globe, BarChart2, Sparkles, ChevronRight } from 'lucide-react'
 
+const navItems = [
+  { id: 'domains', icon: Globe, label: 'My Domains' },
+  { id: 'analytics', icon: BarChart2, label: 'Analytics' },
+]
+
+export default function Sidebar({ user, view, setView, fetchStats, sidebarOpen, setSidebarOpen }) {
   return (
     <>
-      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40 }} />}
-
+      {sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40, backdropFilter: 'blur(4px)' }} />
+      )}
       <aside style={{
-        width: 220, flexShrink: 0, background: 'rgba(255,255,255,0.02)',
-        borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column',
-        padding: '1.5rem 1rem', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
-        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)', transition: 'transform 0.25s ease',
+        width: 240, flexShrink: 0,
+        background: '#ffffff',
+        borderRight: '1px solid #e5e7eb',
+        display: 'flex', flexDirection: 'column',
+        padding: '20px 12px',
+        position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
+        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.25s ease',
+        boxShadow: '4px 0 24px rgba(0,0,0,0.04)',
       }} className="sidebar">
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', marginBottom: '2rem', padding: '0 0.5rem' }}>
-          <img src="/logo.png" alt="" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover' }} onError={e => e.target.style.display = 'none'} />
-          <span style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: '1.1rem', color: '#fff' }}>
-            KRYV<span style={{ background: 'linear-gradient(135deg,#a78bfa,#f472b6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Layer</span>
-          </span>
+        {/* Logo */}
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 28, padding: '4px 8px' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: 16 }}>K</div>
+          <span style={{ fontSize: 16, fontWeight: 800, color: '#0f1117', letterSpacing: '-0.02em' }}>KRYVLayer</span>
         </a>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-          {navItems.map(item => (
-            item.href ? (
-              <a key={item.id} href={item.href} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.65rem 0.75rem', borderRadius: 10, color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', fontWeight: 500, textDecoration: 'none', transition: 'all .2s' }}>
-                <span>{item.icon}</span>{item.label}
-              </a>
-            ) : (
-              <button key={item.id} onClick={() => { setView(item.id); setSidebarOpen(false); if (item.id === 'analytics') fetchStats(); }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.65rem 0.75rem', borderRadius: 10, color: view === item.id ? '#fff' : 'rgba(255,255,255,0.5)', background: view === item.id ? 'rgba(124,58,237,0.2)' : 'none', fontSize: '0.9rem', fontWeight: 500, border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'all .2s' }}>
-                <span>{item.icon}</span>{item.label}
+        {/* Nav */}
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {navItems.map(({ id, icon: Icon, label }) => {
+            const active = view === id
+            return (
+              <button key={id}
+                onClick={() => { setView(id); setSidebarOpen(false); if (id === 'analytics') fetchStats(); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 12px', borderRadius: 10, border: 'none',
+                  background: active ? '#f0f0ff' : 'transparent',
+                  color: active ? '#4f46e5' : '#6b7280',
+                  fontSize: 13, fontWeight: active ? 700 : 500,
+                  cursor: 'pointer', textAlign: 'left', width: '100%',
+                  transition: 'all 0.15s',
+                }}>
+                <Icon size={15} strokeWidth={active ? 2.5 : 1.8} />
+                {label}
+                {active && <ChevronRight size={13} style={{ marginLeft: 'auto' }} />}
               </button>
             )
-          ))}
+          })}
 
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '0.75rem 0' }} />
-          <a href="/chat" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.65rem 0.75rem', borderRadius: 10, background: 'linear-gradient(135deg,rgba(124,58,237,0.2),rgba(219,39,119,0.2))', border: '1px solid rgba(167,139,250,0.2)', color: '#c4b5fd', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
-            <span>✨</span> Ask NEHIRA
+          <div style={{ height: 1, background: '#f3f4f6', margin: '12px 4px' }} />
+
+          <a href="/chat" style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 12px', borderRadius: 10, textDecoration: 'none',
+            background: 'linear-gradient(135deg, #f0f0ff, #fdf4ff)',
+            border: '1px solid #e0d9ff',
+            color: '#4f46e5', fontSize: 13, fontWeight: 700,
+          }}>
+            <Sparkles size={14} />
+            Ask NEHIRA AI
+          </a>
+
+          <a href="/add-domain" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '11px 12px', borderRadius: 10, textDecoration: 'none',
+            background: '#4f46e5', color: '#fff', fontSize: 13, fontWeight: 700, marginTop: 8,
+          }}>
+            + Add Domain
           </a>
         </nav>
 
-        <div style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.25)', padding: '0.5rem' }}>{user.email}</div>
+        {/* Footer */}
+        <div style={{ paddingTop: 16, borderTop: '1px solid #f3f4f6' }}>
+          <div style={{ fontSize: 11, color: '#9ca3af', padding: '0 8px', lineHeight: 1.5 }}>
+            {user?.email}
+          </div>
         </div>
       </aside>
     </>
