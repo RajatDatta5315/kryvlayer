@@ -1,55 +1,70 @@
-import { Globe, BarChart2, Download, Trash2, Plus, ExternalLink, CheckCircle } from 'lucide-react'
+import Link from 'next/link'
+import { Globe, ExternalLink, Trash2, Zap, BarChart3, FileText } from 'lucide-react'
 
-export default function DomainCard({ domain, onDelete, onBulkGenerate }) {
+export default function DomainCard({ domain, onDelete, onGenerate }) {
+  const status = domain.page_count > 0 ? 'active' : 'pending'
   return (
     <div style={{
-      background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16,
-      padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-      transition: 'box-shadow 0.2s',
+      background:'rgba(255,255,255,0.035)',
+      border:'1px solid rgba(255,255,255,0.07)',
+      borderRadius:14, padding:'20px 22px',
+      transition:'border-color 0.15s,background 0.15s',
     }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(79,70,229,0.1)'}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.05)'}>
+      onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.12)';e.currentTarget.style.background='rgba(255,255,255,0.055)'}}
+      onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.background='rgba(255,255,255,0.035)'}}>
+
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
-        <div>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0f1117', marginBottom: 4, letterSpacing: '-0.01em' }}>
-            {domain.business_name}
-          </h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Globe size={12} color="#9ca3af" />
-            <span style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace' }}>{domain.domain}</span>
+      <div style={{ display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:14 }}>
+        <div style={{ display:'flex',alignItems:'center',gap:10,minWidth:0 }}>
+          <div style={{ width:34,height:34,borderRadius:9,background:'rgba(99,102,241,0.12)',border:'1px solid rgba(99,102,241,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+            <Globe size={15} color='#a5b4fc' />
+          </div>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:14,fontWeight:700,color:'#ededed',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:240 }}>{domain.domain}</div>
+            <div style={{ fontSize:11,color:'rgba(237,237,237,0.3)',marginTop:2 }}>{domain.business_name}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 100 }}>
-          <CheckCircle size={10} color="#16a34a" />
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#16a34a' }}>Live</span>
-        </div>
+        <span style={{
+          fontSize:9,padding:'3px 8px',borderRadius:100,
+          fontFamily:"'JetBrains Mono',monospace",fontWeight:600,letterSpacing:'0.1em',textTransform:'uppercase',
+          ...(status==='active'
+            ? {background:'rgba(34,197,94,0.1)',color:'#22c55e',border:'1px solid rgba(34,197,94,0.2)'}
+            : {background:'rgba(245,158,11,0.1)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.2)'}),
+        }}>{status}</span>
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
-        <div style={{ background: '#f8f9fc', border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px', textAlign: 'center' }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#4f46e5', letterSpacing: '-0.02em', lineHeight: 1 }}>{domain.page_count || 0}</div>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, fontWeight: 500 }}>Pages Generated</div>
-        </div>
-        <div style={{ background: '#f8f9fc', border: '1px solid #e5e7eb', borderRadius: 10, padding: '14px', textAlign: 'center' }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#7c3aed', letterSpacing: '-0.02em', lineHeight: 1 }}>{domain.total_views || 0}</div>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, fontWeight: 500 }}>Total Views</div>
-        </div>
+      <div style={{ display:'flex',gap:14,marginBottom:16,padding:'12px 0',borderTop:'1px solid rgba(255,255,255,0.05)',borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+        {[
+          { icon:FileText, label:'Pages', value:domain.page_count||0 },
+          { icon:BarChart3, label:'Views',  value:domain.total_views||0 },
+        ].map(({ icon:Icon, label, value }) => (
+          <div key={label} style={{ display:'flex',alignItems:'center',gap:7 }}>
+            <Icon size={12} color='rgba(237,237,237,0.2)' />
+            <span style={{ fontSize:13,fontWeight:700,color:'#ededed' }}>{value.toLocaleString()}</span>
+            <span style={{ fontSize:11,color:'rgba(237,237,237,0.3)' }}>{label}</span>
+          </div>
+        ))}
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <a href={`/domain/${domain.id}`} style={{ flex: 1, minWidth: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', background: '#f0f0ff', color: '#4f46e5', borderRadius: 10, fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
-          <ExternalLink size={12} /> View Pages
-        </a>
-        <button onClick={() => onBulkGenerate(domain.id, 100)} style={{ flex: 1, minWidth: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', background: '#fff', color: '#374151', borderRadius: 10, fontSize: 12, fontWeight: 700, border: '1px solid #e5e7eb', cursor: 'pointer' }}>
-          <Plus size={12} /> Generate
+      <div style={{ display:'flex',gap:7,flexWrap:'wrap' }}>
+        <Link href={`/domain/${domain.id}`}
+          style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'8px 12px',background:'rgba(99,102,241,0.1)',border:'1px solid rgba(99,102,241,0.2)',borderRadius:8,textDecoration:'none',fontSize:12,color:'#a5b4fc',fontWeight:600,minWidth:80 }}>
+          <BarChart3 size={12} /> View Pages
+        </Link>
+        <button onClick={() => onGenerate && onGenerate(domain.id, 100)}
+          style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'8px 12px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,cursor:'pointer',fontSize:12,color:'rgba(237,237,237,0.55)',fontWeight:600,fontFamily:'inherit',minWidth:80 }}>
+          <Zap size={12} /> Generate
         </button>
-        <a href={`/api/export/csv?domainId=${domain.id}`} style={{ padding: '9px 12px', background: '#f8f9fc', color: '#9ca3af', borderRadius: 10, fontSize: 12, border: '1px solid #e5e7eb', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-          <Download size={12} />
-        </a>
-        <button onClick={() => onDelete(domain.id, domain.business_name)} style={{ padding: '9px 12px', background: '#fff5f5', color: '#ef4444', borderRadius: 10, fontSize: 12, border: '1px solid #fee2e2', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+        {domain.domain && (
+          <a href={`https://${domain.domain}`} target='_blank' rel='noreferrer'
+            style={{ display:'flex',alignItems:'center',justifyContent:'center',padding:'8px 10px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'rgba(237,237,237,0.4)' }}>
+            <ExternalLink size={12} />
+          </a>
+        )}
+        <button onClick={() => onDelete && onDelete(domain.id, domain.domain)}
+          style={{ display:'flex',alignItems:'center',justifyContent:'center',padding:'8px 10px',background:'rgba(239,68,68,0.06)',border:'1px solid rgba(239,68,68,0.15)',borderRadius:8,cursor:'pointer',color:'rgba(239,68,68,0.7)',fontFamily:'inherit' }}>
           <Trash2 size={12} />
         </button>
       </div>

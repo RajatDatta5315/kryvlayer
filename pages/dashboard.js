@@ -1,21 +1,19 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import Link from 'next/link'
 import Sidebar from '../components/Sidebar'
 import DomainCard from '../components/DomainCard'
 import Notification from '../components/Notification'
-import { Globe, BarChart2, Plus, Menu, X, TrendingUp, Activity, Layers, Zap } from 'lucide-react'
+import { Globe, BarChart3, Plus, Menu, X, Zap, Layers, TrendingUp, Activity } from 'lucide-react'
 
 export default function Dashboard() {
-  const [view, setView] = useState('domains')
   const [domains, setDomains] = useState([])
   const [stats, setStats] = useState(null)
   const [notification, setNotification] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const user = { email: 'demo@kryvlayer.com', id: '1' }
-
-  useEffect(() => { fetchDomains() }, [])
+  useEffect(() => { fetchDomains(); fetchStats() }, [])
 
   function notify(msg, type = 'success') {
     setNotification({ msg, type })
@@ -25,11 +23,11 @@ export default function Dashboard() {
   async function fetchDomains() {
     setLoading(true)
     try {
-      const res = await fetch(`/api/domains/list?userId=${user.id}`)
+      const res = await fetch('/api/domains/list?userId=1')
       const data = await res.json()
       if (data.success) setDomains(data.domains || [])
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
+    } catch {}
+    setLoading(false)
   }
 
   async function fetchStats() {
@@ -40,154 +38,111 @@ export default function Dashboard() {
     } catch {}
   }
 
-  async function deleteDomain(domainId, domainName) {
-    if (!confirm(`Delete "${domainName}" and ALL its pages? This cannot be undone.`)) return
+  async function deleteDomain(id, name) {
+    if (!confirm(`Delete "${name}" and all its pages?`)) return
     try {
-      const res = await fetch('/api/domains/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domainId })
-      })
+      const res = await fetch('/api/domains/delete', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ domainId:id }) })
       const data = await res.json()
       if (data.success) { fetchDomains(); notify('Domain deleted') }
-      else notify('Delete failed: ' + data.error, 'error')
-    } catch (e) { notify('Error: ' + e.message, 'error') }
+      else notify(data.error || 'Delete failed', 'error')
+    } catch (e) { notify(e.message, 'error') }
   }
 
-  async function bulkGenerate(domainId, count) {
-    notify('Generating pages...')
+  async function bulkGenerate(id, count) {
+    notify('⚡ Generating ' + count + ' pages...')
     try {
-      const res = await fetch('/api/pages/bulk-generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domainId, count })
-      })
+      const res = await fetch('/api/pages/bulk-generate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ domainId:id, count }) })
       const data = await res.json()
-      if (data.success) { fetchDomains(); notify(`${data.pages?.length || count} pages generated`) }
+      if (data.success) { fetchDomains(); notify(`✅ ${data.generated || count} pages generated!`) }
       else notify(data.error || 'Generation failed', 'error')
-    } catch (e) { notify('Error: ' + e.message, 'error') }
+    } catch (e) { notify(e.message, 'error') }
   }
 
-  const totalPages = domains.reduce((s, d) => s + (d.page_count || 0), 0)
-  const totalViews = domains.reduce((s, d) => s + (d.total_views || 0), 0)
+  const metricCards = [
+    { label:'Domains',     value:stats?.totalDomains   ?? domains.length ?? 0, icon:Globe,      suffix:'' },
+    { label:'Pages',       value:stats?.totalPages     ?? 0,                   icon:Layers,     suffix:'' },
+    { label:'Total Views', value:stats?.totalViews     ?? 0,                   icon:TrendingUp, suffix:'' },
+    { label:'Avg/Page',    value:stats?.totalPages ? Math.round((stats.totalViews||0)/stats.totalPages) : 0, icon:Activity, suffix:'' },
+  ]
 
   return (
     <>
       <Head>
         <title>Dashboard — KRYVLayer</title>
-        <link rel="icon" href="/logo.png" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
       </Head>
+      <div style={{ display:'flex',minHeight:'100vh',background:'#050505',fontFamily:'Inter,sans-serif',position:'relative' }}>
+        {/* Mobile topbar */}
+        <div style={{ display:'none',position:'fixed',top:0,left:0,right:0,height:52,background:'rgba(5,5,5,0.95)',borderBottom:'1px solid rgba(255,255,255,0.07)',alignItems:'center',justifyContent:'space-between',padding:'0 16px',zIndex:30 }}
+          className="mobile-bar">
+          <span style={{ fontSize:14,fontWeight:800,color:'#ededed' }}>KRYVLayer</span>
+          <button onClick={()=>setSidebarOpen(!sidebarOpen)} style={{ background:'none',border:'none',cursor:'pointer',color:'rgba(237,237,237,0.5)',padding:4 }}>
+            {sidebarOpen ? <X size={18}/> : <Menu size={18}/>}
+          </button>
+        </div>
 
-      <div style={{ display: 'flex', minHeight: '100vh', background: '#f8f9fc', fontFamily: 'Inter, sans-serif' }}>
-        {/* Sidebar */}
-        <Sidebar user={user} view={view} setView={setView} fetchStats={fetchStats} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <Sidebar open={sidebarOpen} onClose={()=>setSidebarOpen(false)} />
 
-        {/* Main — offset for fixed sidebar on desktop */}
-        <main style={{ flex: 1, marginLeft: 240, display: 'flex', flexDirection: 'column', minHeight: '100vh', minWidth: 0 }}>
-          {/* Topbar */}
-          <header style={{ position: 'sticky', top: 0, zIndex: 30, background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ display: 'none', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4 }} className="mobile-menu">
-                <Menu size={20} />
-              </button>
+        <main style={{ flex:1,minWidth:0,overflowY:'auto' }}>
+          <div style={{ maxWidth:1100,margin:'0 auto',padding:'36px 28px',position:'relative',zIndex:1 }}>
+            {/* Header */}
+            <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:32 }}>
               <div>
-                <h1 style={{ fontSize: 16, fontWeight: 800, color: '#0f1117', letterSpacing: '-0.01em' }}>
-                  {view === 'domains' ? 'My Domains' : 'Analytics'}
-                </h1>
-                <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>KRYVLayer Dashboard</p>
+                <h1 style={{ fontSize:22,fontWeight:900,color:'#ededed',letterSpacing:'-0.025em',marginBottom:4 }}>Dashboard</h1>
+                <p style={{ fontSize:13,color:'rgba(237,237,237,0.35)' }}>Manage your domains and SEO page generation.</p>
               </div>
+              <Link href="/add-domain" style={{ display:'flex',alignItems:'center',gap:7,padding:'9px 18px',background:'#6366f1',borderRadius:9,textDecoration:'none',fontSize:13,fontWeight:700,color:'#fff',transition:'background 0.15s' }}
+                onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='#4f46e5'}
+                onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='#6366f1'}>
+                <Plus size={14}/> Add Domain
+              </Link>
             </div>
-            <a href="/add-domain" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#4f46e5', borderRadius: 10, color: '#fff', textDecoration: 'none', fontSize: 13, fontWeight: 700 }}>
-              <Plus size={14} /> Add Domain
-            </a>
-          </header>
 
-          {/* Content */}
-          <div style={{ flex: 1, padding: 24, maxWidth: 1200, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-            {view === 'domains' && (
-              <>
-                {/* Summary Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
-                  {[
-                    { label: 'Active Domains', value: domains.length, icon: Globe, color: '#4f46e5', bg: '#f0f0ff' },
-                    { label: 'Total Pages', value: totalPages.toLocaleString(), icon: Layers, color: '#7c3aed', bg: '#fdf4ff' },
-                    { label: 'Total Views', value: totalViews.toLocaleString(), icon: Activity, color: '#059669', bg: '#f0fdf4' },
-                    { label: 'SEO Score', value: domains.length > 0 ? '94/100' : '—', icon: Zap, color: '#d97706', bg: '#fffbeb' },
-                  ].map(({ label, value, icon: Icon, color, bg }, i) => (
-                    <div key={i} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 500 }}>{label}</span>
-                        <div style={{ width: 30, height: 30, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Icon size={14} color={color} />
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 28, fontWeight: 900, color: '#0f1117', letterSpacing: '-0.02em' }}>{value}</div>
+            {/* Metric cards */}
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:14,marginBottom:32 }}>
+              {metricCards.map(({ label, value, icon:Icon }) => (
+                <div key={label} style={{ background:'rgba(255,255,255,0.035)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:12,padding:'18px 20px' }}>
+                  <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14 }}>
+                    <span style={{ fontSize:11,color:'rgba(237,237,237,0.35)',fontWeight:500 }}>{label}</span>
+                    <div style={{ width:28,height:28,borderRadius:7,background:'rgba(99,102,241,0.1)',border:'1px solid rgba(99,102,241,0.15)',display:'flex',alignItems:'center',justifyContent:'center' }}>
+                      <Icon size={13} color='#a5b4fc' />
                     </div>
-                  ))}
+                  </div>
+                  <div style={{ fontSize:28,fontWeight:900,color:'#ededed',letterSpacing:'-0.02em' }}>{typeof value==='number'?value.toLocaleString():value}</div>
                 </div>
+              ))}
+            </div>
 
-                {/* Domain Cards */}
-                {loading ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} style={{ height: 200, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, animation: 'pulse 1.5s ease infinite' }} />
-                    ))}
-                  </div>
-                ) : domains.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '80px 20px', background: '#fff', border: '2px dashed #e5e7eb', borderRadius: 20 }}>
-                    <Globe size={40} color="#d1d5db" style={{ margin: '0 auto 16px' }} />
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: '#374151', marginBottom: 8 }}>No domains yet</h3>
-                    <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 24 }}>Connect your first domain and start generating SEO pages automatically.</p>
-                    <a href="/add-domain" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '12px 24px', background: '#4f46e5', borderRadius: 12, color: '#fff', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>
-                      <Plus size={14} /> Add Your First Domain
-                    </a>
-                  </div>
-                ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-                    {domains.map(domain => (
-                      <DomainCard key={domain.id} domain={domain} onDelete={deleteDomain} onBulkGenerate={bulkGenerate} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+            {/* Domains */}
+            <div style={{ marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between' }}>
+              <h2 style={{ fontSize:14,fontWeight:700,color:'rgba(237,237,237,0.6)',textTransform:'uppercase',letterSpacing:'0.08em' }}>Your Domains</h2>
+              <span style={{ fontSize:11,color:'rgba(237,237,237,0.25)',fontFamily:"'JetBrains Mono',monospace" }}>{domains.length} total</span>
+            </div>
 
-            {view === 'analytics' && (
-              <div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
-                  {stats ? [
-                    { label: 'Total Domains', value: stats.totalDomains || domains.length },
-                    { label: 'Total Pages', value: stats.totalPages || totalPages },
-                    { label: 'Total Views', value: stats.totalViews || totalViews },
-                    { label: 'Avg Pages/Domain', value: domains.length ? Math.round(totalPages / domains.length) : 0 },
-                  ].map(({ label, value }, i) => (
-                    <div key={i} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: 20 }}>
-                      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8, fontWeight: 500 }}>{label}</div>
-                      <div style={{ fontSize: 30, fontWeight: 900, color: '#4f46e5', letterSpacing: '-0.02em' }}>{typeof value === 'number' ? value.toLocaleString() : value}</div>
-                    </div>
-                  )) : (
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 0', color: '#9ca3af', fontSize: 13 }}>
-                      Loading analytics...
-                    </div>
-                  )}
-                </div>
+            {loading ? (
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:14 }}>
+                {[1,2,3].map(i=><div key={i} style={{ height:160,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:14,animation:'pulse 1.5s ease infinite' }}/>)}
+              </div>
+            ) : domains.length === 0 ? (
+              <div style={{ textAlign:'center',padding:'72px 24px',border:'1px dashed rgba(255,255,255,0.08)',borderRadius:16 }}>
+                <Globe size={36} color='rgba(237,237,237,0.12)' style={{ margin:'0 auto 16px' }} />
+                <h3 style={{ fontSize:16,fontWeight:700,color:'rgba(237,237,237,0.5)',marginBottom:8 }}>No domains yet</h3>
+                <p style={{ fontSize:13,color:'rgba(237,237,237,0.25)',marginBottom:24 }}>Add your first domain to start generating SEO pages.</p>
+                <Link href="/add-domain" style={{ display:'inline-flex',alignItems:'center',gap:7,padding:'10px 22px',background:'#6366f1',borderRadius:9,textDecoration:'none',fontSize:13,fontWeight:700,color:'#fff' }}>
+                  <Plus size={14}/> Add Domain
+                </Link>
+              </div>
+            ) : (
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:14 }}>
+                {domains.map(d=><DomainCard key={d.id} domain={d} onDelete={deleteDomain} onGenerate={bulkGenerate}/>)}
               </div>
             )}
           </div>
         </main>
 
-        {notification && <Notification msg={notification.msg} type={notification.type} />}
+        {notification && <Notification msg={notification.msg} type={notification.type} onClose={()=>setNotification(null)}/>}
+        <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}} @media(max-width:768px){.mobile-bar{display:flex!important}}`}</style>
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          main { margin-left: 0 !important; }
-          .mobile-menu { display: flex !important; }
-        }
-        @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.6} }
-      `}</style>
     </>
   )
 }
