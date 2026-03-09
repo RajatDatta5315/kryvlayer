@@ -92,8 +92,8 @@ export default function Dashboard() {
                 <p style={{ fontSize:13,color:'rgba(237,237,237,0.35)' }}>Manage your domains and SEO page generation.</p>
               </div>
               <Link href="/add-domain" style={{ display:'flex',alignItems:'center',gap:7,padding:'9px 18px',background:'#6366f1',borderRadius:9,textDecoration:'none',fontSize:13,fontWeight:700,color:'#fff',transition:'background 0.15s' }}
-                onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='#4f46e5'}
-                onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='#6366f1'}>
+                onMouseEnter={e=>e.currentTarget.style.background='#4f46e5'}
+                onMouseLeave={e=>e.currentTarget.style.background='#6366f1'}>
                 <Plus size={14}/> Add Domain
               </Link>
             </div>
