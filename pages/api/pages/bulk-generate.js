@@ -2,20 +2,20 @@ import { neon } from '@neondatabase/serverless'
 
 async function callNEHIRA(prompt) {
   try {
-    const res = await fetch(process.env.NEHIRA_ENDPOINT, {
+    const apiKey = process.env.GROQ_API_KEY || process.env.NEHIRA_API_KEY
+    if (!apiKey) return null
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.NEHIRA_API_KEY}`
-      },
-      body: JSON.stringify({ message: prompt })
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 800
+      })
     })
     if (!res.ok) return null
-    const raw = await res.text()
-    if (!raw || !raw.trim()) return null
-    let data
-    try { data = JSON.parse(raw) } catch { return raw }
-    return data.response || data.message || data.text || null
+    const data = await res.json()
+    return data.choices?.[0]?.message?.content || null
   } catch { return null }
 }
 
@@ -144,6 +144,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid body' })
   }
   if (!domainId) return res.status(400).json({ error: 'domainId required' })
+  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
+    return res.status(500).json({ error: 'DATABASE_URL not configured. Add it in Vercel → Project → Settings → Environment Variables' })
+  }
 
   try {
     const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL)
