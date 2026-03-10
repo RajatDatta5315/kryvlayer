@@ -13,6 +13,25 @@ export default function DomainDetail() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const PER = 20
+  const [generating, setGenerating] = useState(false)
+  const [genMsg, setGenMsg] = useState('')
+
+  async function generateMore() {
+    if (!id || generating) return
+    setGenerating(true)
+    setGenMsg('⚡ Generating 100 pages...')
+    try {
+      const res = await fetch('/api/pages/bulk-generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domainId: id, count: 100 }) })
+      const data = await res.json()
+      if (data.success) {
+        setGenMsg(`✅ ${data.count || 0} pages generated!`)
+        const p = await fetch(`/api/pages/list?domainId=${id}`).then(r => r.json())
+        setPages(Array.isArray(p) ? p : p.pages || [])
+      } else {
+        setGenMsg(data.error || 'Generation failed')
+      }
+    } catch (e) { setGenMsg(e.message) } finally { setGenerating(false); setTimeout(() => setGenMsg(''), 5000) }
+  }
 
   useEffect(() => {
     if (!id) return
@@ -38,10 +57,11 @@ export default function DomainDetail() {
           {domain && <h1 style={{ fontSize: 15, fontWeight: 800, color: '#0f1117' }}>{domain.business_name} · {pages.length} pages</h1>}
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
             <a href={`/api/export/csv?domainId=${id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#f8f9fc', border: '1px solid #e5e7eb', borderRadius: 9, color: '#374151', textDecoration: 'none', fontSize: 12, fontWeight: 600 }}><Download size={12} /> Export CSV</a>
-            <Link href={`/add-domain`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: '#4f46e5', borderRadius: 9, color: '#fff', textDecoration: 'none', fontSize: 12, fontWeight: 700 }}><Plus size={12} /> Generate More</Link>
+            <button onClick={generateMore} disabled={generating} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: generating ? '#6b7280' : '#4f46e5', borderRadius: 9, color: '#fff', fontSize: 12, fontWeight: 700, border: 'none', cursor: generating ? 'wait' : 'pointer', fontFamily: 'Inter,sans-serif' }}><Plus size={12} />{generating ? 'Generating...' : 'Generate More'}</button>
           </div>
         </div>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 24px' }}>
+          {genMsg && <div style={{ marginBottom: 16, padding: '10px 16px', background: genMsg.startsWith('✅') ? '#f0fdf4' : genMsg.startsWith('⚡') ? '#eef2ff' : '#fef2f2', border: `1px solid ${genMsg.startsWith('✅') ? '#86efac' : genMsg.startsWith('⚡') ? '#a5b4fc' : '#fca5a5'}`, borderRadius: 10, fontSize: 13, color: genMsg.startsWith('✅') ? '#166534' : genMsg.startsWith('⚡') ? '#3730a3' : '#991b1b', fontWeight: 600 }}>{genMsg}</div>}
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: '#9ca3af', fontSize: 13 }}>Loading pages...</div>
           ) : (
