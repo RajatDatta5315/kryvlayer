@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [notification, setNotification] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [dbError, setDbError] = useState(null)
 
   useEffect(() => { fetchDomains(); fetchStats() }, [])
 
@@ -25,8 +26,10 @@ export default function Dashboard() {
     try {
       const res = await fetch('/api/domains/list?userId=1')
       const data = await res.json()
-      if (data.success) setDomains(data.domains || [])
-    } catch {}
+      if (data.success) { setDomains(data.domains || []); setDbError(null) }
+      else if (data.error && data.error.includes('DATABASE')) setDbError('DATABASE_URL not set in Vercel env vars')
+      else setDbError(data.error || 'Failed to load domains')
+    } catch { setDbError('API unreachable') }
     setLoading(false)
   }
 
@@ -53,8 +56,13 @@ export default function Dashboard() {
     try {
       const res = await fetch('/api/pages/bulk-generate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ domainId:id, count }) })
       const data = await res.json()
-      if (data.success) { fetchDomains(); notify(`✅ ${data.generated || count} pages generated!`) }
-      else notify(data.error || 'Generation failed', 'error')
+      if (data.success) {
+        // Update domain page count locally instead of refreshing (avoids DB round-trip wiping state)
+        setDomains(prev => prev.map(d => d.id === id ? { ...d, page_count: (d.page_count || 0) + (data.generated || count) } : d))
+        notify(`✅ ${data.generated || count} pages generated!`)
+      } else {
+        notify(data.error || 'Generation failed — check DATABASE_URL in Vercel env', 'error')
+      }
     } catch (e) { notify(e.message, 'error') }
   }
 
@@ -122,6 +130,17 @@ export default function Dashboard() {
             {loading ? (
               <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:14 }}>
                 {[1,2,3].map(i=><div key={i} style={{ height:160,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:14,animation:'pulse 1.5s ease infinite' }}/>)}
+              </div>
+            ) : dbError ? (
+              <div style={{ textAlign:'center',padding:'64px 24px',border:'1px solid rgba(239,68,68,0.15)',borderRadius:16,background:'rgba(239,68,68,0.04)' }}>
+                <div style={{ fontSize:13,color:'rgba(239,68,68,0.8)',fontFamily:"'JetBrains Mono',monospace",marginBottom:12 }}>DATABASE_NOT_CONNECTED</div>
+                <p style={{ fontSize:13,color:'rgba(237,237,237,0.4)',marginBottom:20,maxWidth:480,margin:'0 auto 20px' }}>
+                  KryvLayer needs a Neon PostgreSQL database to store domains and generated pages.<br/>
+                  Go to <strong style={{ color:'#a5b4fc' }}>Vercel → Settings → Env Vars</strong> and add <code style={{ fontFamily:"'JetBrains Mono',monospace",color:'#6ee7b7',fontSize:11 }}>DATABASE_URL</code> with your Neon connection string.
+                </p>
+                <button onClick={fetchDomains} style={{ padding:'9px 20px',background:'rgba(99,102,241,0.15)',border:'1px solid rgba(99,102,241,0.3)',borderRadius:9,color:'#a5b4fc',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit' }}>
+                  Retry Connection
+                </button>
               </div>
             ) : domains.length === 0 ? (
               <div style={{ textAlign:'center',padding:'72px 24px',border:'1px dashed rgba(255,255,255,0.08)',borderRadius:16 }}>
