@@ -163,40 +163,11 @@ export default async function handler(req, res) {
     const industry = domain.industry || 'Software'
     const description = domain.description || ''
 
-    // Ask NEHIRA to generate a full keyword + city matrix for this specific site
-    const matrixPrompt = `You are an SEO expert analyzing: ${websiteUrl}
+    // Use curated keyword + city defaults (no AI call = no Vercel timeout)
+    const keywords = ['crm software','project management','business automation','saas platform','workflow tools','analytics dashboard','customer management','invoice software','team collaboration','marketing automation','hr software','inventory management','sales tracking','customer support','data analytics','reporting tools','task management','time tracking','document management','lead generation','email marketing','social media management','content management','event management','accounting software']
+    const cities = ['London','New York','Toronto','Singapore','Dubai','Berlin','Sydney','Mumbai','Paris','Tokyo','Los Angeles','Chicago','San Francisco','Amsterdam','Stockholm','Oslo','Copenhagen','Helsinki','Dublin','Zurich','Vienna','Barcelona','Milan','Madrid','Rome','Warsaw','Prague','Budapest','Lisbon','Athens','Cairo','Nairobi','Lagos','Johannesburg','Cape Town','São Paulo','Buenos Aires','Mexico City','Bogotá','Lima','Manila','Jakarta','Bangkok','Kuala Lumpur','Ho Chi Minh City']
 
-Business: ${businessName}
-Industry: ${industry}
-
-Generate a comprehensive SEO keyword matrix. Return ONLY this JSON:
-{
-  "keywords": ["keyword 1","keyword 2","keyword 3"],
-  "cities": ["city 1","city 2","city 3"],
-  "industry": "refined industry name",
-  "description": "one sentence about what this business does"
-}
-
-Generate 25 specific long-tail keywords and 40 global cities. Make keywords highly specific to this exact business.`
-
-    let keywords = ['crm software','project management','business automation','saas platform','workflow tools','analytics dashboard','customer management','invoice software','team collaboration','marketing automation','hr software','inventory management','sales tracking','customer support','data analytics','reporting tools','task management','time tracking','document management','lead generation','email marketing','social media management','content management','event management','accounting software']
-    let cities = ['London','New York','Toronto','Singapore','Dubai','Berlin','Sydney','Mumbai','Paris','Tokyo','Los Angeles','Chicago','San Francisco','Amsterdam','Stockholm','Oslo','Copenhagen','Helsinki','Dublin','Zurich','Vienna','Barcelona','Milan','Madrid','Rome','Warsaw','Prague','Budapest','Lisbon','Athens','Cairo','Nairobi','Lagos','Johannesburg','Cape Town','São Paulo','Buenos Aires','Mexico City','Bogotá','Lima','Manila','Jakarta','Bangkok','Kuala Lumpur','Ho Chi Minh City']
-
-    const matrixText = await callNEHIRA(matrixPrompt)
-    if (matrixText) {
-      try {
-        const jsonMatch = matrixText.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0])
-          if (Array.isArray(parsed.keywords) && parsed.keywords.length > 0) keywords = parsed.keywords
-          if (Array.isArray(parsed.cities) && parsed.cities.length > 0) cities = parsed.cities
-          if (parsed.industry) await sql`UPDATE domains SET industry = ${parsed.industry} WHERE id = ${domainId}`
-          if (parsed.description) await sql`UPDATE domains SET description = ${parsed.description} WHERE id = ${domainId}`
-        }
-      } catch {}
-    }
-
-    const generatedPages = []
+        const generatedPages = []
     let count = 0
 
     for (const keyword of keywords) {
@@ -207,22 +178,13 @@ Generate 25 specific long-tail keywords and 40 global cities. Make keywords high
         const title = `${keyword} in ${city} | ${businessName}`
         const metaDesc = `Best ${keyword} in ${city}. ${businessName} provides professional ${industry} solutions for ${city} businesses. Free trial available.`
 
-        const contentPrompt = `Write a 300-word SEO landing page body for "${businessName}" (${industry}).
-Target: "${keyword}" for businesses in ${city}.
-Be SPECIFIC to ${city}'s business environment. Include local context.
-Structure: Hook sentence, Problem in ${city}, Solution with benefits, Social proof, Call to action.
-Tone: Professional, confident, helpful. Plain text only.`
-
-        let pageContent = `In ${city}'s fast-paced business environment, having the right ${keyword} solution is no longer optional — it's essential for staying competitive. ${businessName} has been helping ${city} businesses solve exactly this challenge.
+        const pageContent = `In ${city}'s fast-paced business environment, having the right ${keyword} solution is no longer optional — it's essential for staying competitive. ${businessName} has been helping ${city} businesses solve exactly this challenge.
 
 Our ${keyword} platform was purpose-built for businesses operating in markets like ${city}. We understand the local regulatory landscape, the talent dynamics, and the specific pressures that ${city} companies face when trying to scale. That's why over 500 businesses in ${city} and beyond have made ${businessName} their trusted ${industry} partner.
 
 What sets us apart from generic solutions? We don't just offer software — we offer outcomes. With ${businessName}, ${city} businesses typically see 40% reduction in manual work, 3x faster onboarding, and measurable ROI within the first 30 days. Our AI-powered automation handles the heavy lifting so your ${city} team can focus on what actually moves the needle.
 
 Whether you're a 5-person startup in ${city} or a 500-person enterprise, ${businessName} scales with your ambition. Start your free trial today — no credit card required, no lengthy setup, just results.`
-
-        const generated = await callNEHIRA(contentPrompt)
-        if (generated && generated.length > 100) pageContent = generated
 
         const fullHtml = buildFullHtmlPage(keyword, city, businessName, websiteUrl, industry, pageContent, description)
 
@@ -247,8 +209,9 @@ Whether you're a 5-person startup in ${city} or a 500-person enterprise, ${busin
     return res.status(200).json({
       success: true,
       count: generatedPages.length,
-      pages: generatedPages,
-      message: `Generated ${generatedPages.length} landing pages`
+      generated: generatedPages.length,
+      pages: generatedPages.slice(0, 20),
+      message: `Generated ${generatedPages.length} landing pages for ${domain.domain}`
     })
 
   } catch (error) {
