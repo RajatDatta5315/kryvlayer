@@ -1,6 +1,8 @@
 import { neon } from '@neondatabase/serverless'
 
 export default async function handler(req, res) {
+  if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL)
+    return res.status(200).json({ success: true, totalPages: 0, totalViews: 0, totalDomains: 0, topPages: [], recentPages: [], message: 'DATABASE_URL not set — add it in Vercel settings' })
   try {
     const sql = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL)
 
