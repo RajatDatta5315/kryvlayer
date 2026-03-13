@@ -22,7 +22,15 @@ export default function DomainDetail() {
     setGenMsg('⚡ Generating 100 pages...')
     try {
       const res = await fetch('/api/pages/bulk-generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ domainId: id, count: 100 }) })
-      const data = await res.json()
+      let data
+      const ct = res.headers.get('content-type') || ''
+      if (ct.includes('json')) {
+        data = await res.json()
+      } else {
+        const txt = await res.text()
+        setGenMsg(`❌ Server error ${res.status} — add DATABASE_URL + GROQ_API_KEY in Vercel env vars`)
+        setGenerating(false); return
+      }
       if (data.success) {
         setGenMsg(`✅ ${data.count || 0} pages generated!`)
         const p = await fetch(`/api/pages/list?domainId=${id}`).then(r => r.json())
