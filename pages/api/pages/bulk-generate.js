@@ -167,43 +167,67 @@ export default async function handler(req, res) {
     const keywords = ['crm software','project management','business automation','saas platform','workflow tools','analytics dashboard','customer management','invoice software','team collaboration','marketing automation','hr software','inventory management','sales tracking','customer support','data analytics','reporting tools','task management','time tracking','document management','lead generation','email marketing','social media management','content management','event management','accounting software']
     const cities = ['London','New York','Toronto','Singapore','Dubai','Berlin','Sydney','Mumbai','Paris','Tokyo','Los Angeles','Chicago','San Francisco','Amsterdam','Stockholm','Oslo','Copenhagen','Helsinki','Dublin','Zurich','Vienna','Barcelona','Milan','Madrid','Rome','Warsaw','Prague','Budapest','Lisbon','Athens','Cairo','Nairobi','Lagos','Johannesburg','Cape Town','São Paulo','Buenos Aires','Mexico City','Bogotá','Lima','Manila','Jakarta','Bangkok','Kuala Lumpur','Ho Chi Minh City']
 
-        const generatedPages = []
-    let count = 0
-
-    for (const keyword of keywords) {
+        // Build all page records first (no DB calls in loop)
+    const allPages = []
+    outer: for (const keyword of keywords) {
       for (const city of cities) {
-        if (count >= targetCount) break
-
+        if (allPages.length >= targetCount) break outer
         const pageSlug = buildSlug(keyword, city)
         const title = `${keyword} in ${city} | ${businessName}`
         const metaDesc = `Best ${keyword} in ${city}. ${businessName} provides professional ${industry} solutions for ${city} businesses. Free trial available.`
-
         const pageContent = `In ${city}'s fast-paced business environment, having the right ${keyword} solution is no longer optional — it's essential for staying competitive. ${businessName} has been helping ${city} businesses solve exactly this challenge.
 
-Our ${keyword} platform was purpose-built for businesses operating in markets like ${city}. We understand the local regulatory landscape, the talent dynamics, and the specific pressures that ${city} companies face when trying to scale. That's why over 500 businesses in ${city} and beyond have made ${businessName} their trusted ${industry} partner.
+Our ${keyword} platform was purpose-built for businesses like yours in ${city}. We understand the local landscape, the talent market, and the specific pressures ${city} companies face when trying to scale. Over 500 businesses in ${city} and beyond trust ${businessName} as their ${industry} partner.
 
-What sets us apart from generic solutions? We don't just offer software — we offer outcomes. With ${businessName}, ${city} businesses typically see 40% reduction in manual work, 3x faster onboarding, and measurable ROI within the first 30 days. Our AI-powered automation handles the heavy lifting so your ${city} team can focus on what actually moves the needle.
-
-Whether you're a 5-person startup in ${city} or a 500-person enterprise, ${businessName} scales with your ambition. Start your free trial today — no credit card required, no lengthy setup, just results.`
-
+With ${businessName}, ${city} businesses see 40% reduction in manual work, 3x faster onboarding, and measurable ROI within 30 days. Start your free trial today — no credit card required.`
         const fullHtml = buildFullHtmlPage(keyword, city, businessName, websiteUrl, industry, pageContent, description)
+        allPages.push({ slug: pageSlug, title, metaDesc, html: fullHtml })
+      }
+    }
 
-        try {
-          await sql`
-            INSERT INTO pages (domain_id, slug, title, meta_description, content, content_type)
-            VALUES (${domainId}, ${pageSlug}, ${title}, ${metaDesc}, ${fullHtml}, 'html')
-            ON CONFLICT (domain_id, slug) DO UPDATE SET
-              content = EXCLUDED.content,
-              title = EXCLUDED.title,
-              meta_description = EXCLUDED.meta_description
-          `
-          generatedPages.push({ slug: pageSlug, title })
-          count++
-        } catch (e) {
-          console.error('Insert error:', e.message)
+    // Batch INSERT in chunks of 25 to avoid query size limits
+    const generatedPages = []
+    const CHUNK = 25
+    for (let i = 0; i < allPages.length; i += CHUNK) {
+      const chunk = allPages.slice(i, i + CHUNK)
+      try {
+        // Build VALUES list
+        const values = chunk.map((p, idx) => {
+          const base = i + idx
+          return `($1, $${base*4+2}, $${base*4+3}, $${base*4+4}, $${base*4+5}, 'html')`
+        }).join(',')
+        const params = [domainId]
+        chunk.forEach(p => params.push(p.slug, p.title, p.metaDesc, p.html))
+        await sql`
+          INSERT INTO pages (domain_id, slug, title, meta_description, content, content_type)
+          SELECT * FROM UNNEST(
+            ${sql.array([domainId])},
+            ${sql.array(chunk.map(p => p.slug))},
+            ${sql.array(chunk.map(p => p.title))},
+            ${sql.array(chunk.map(p => p.metaDesc))},
+            ${sql.array(chunk.map(p => p.html))},
+            ${sql.array(chunk.map(() => 'html'))}
+          ) AS t(domain_id, slug, title, meta_description, content, content_type)
+          ON CONFLICT (domain_id, slug) DO UPDATE SET
+            content = EXCLUDED.content,
+            title = EXCLUDED.title,
+            meta_description = EXCLUDED.meta_description
+        `
+        chunk.forEach(p => generatedPages.push({ slug: p.slug, title: p.title }))
+      } catch (e) {
+        // Fallback: insert one by one for this chunk
+        for (const p of chunk) {
+          try {
+            await sql`
+              INSERT INTO pages (domain_id, slug, title, meta_description, content, content_type)
+              VALUES (${domainId}, ${p.slug}, ${p.title}, ${p.metaDesc}, ${p.html}, 'html')
+              ON CONFLICT (domain_id, slug) DO UPDATE SET
+                content = EXCLUDED.content, title = EXCLUDED.title, meta_description = EXCLUDED.meta_description
+            `
+            generatedPages.push({ slug: p.slug, title: p.title })
+          } catch {}
         }
       }
-      if (count >= targetCount) break
     }
 
     return res.status(200).json({
